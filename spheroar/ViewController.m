@@ -16,6 +16,10 @@
 @property (strong, nonatomic) IBOutlet UILabel *robotStatus;
 @property (strong, nonatomic) IBOutlet UILabel *status;
 @property (strong, nonatomic) IBOutlet UISlider *speed_bar;
+@property (strong, nonatomic) IBOutlet UILabel *splight_title;
+@property (strong, nonatomic) IBOutlet UILabel *splight_pos_x;
+@property (strong, nonatomic) IBOutlet UITextField *splight_pos_x_input;
+- (IBAction)spligt_pos_x_input_exit:(id)sender;
 
 @end
 
@@ -34,8 +38,7 @@ double offline_move_radius = 0.1;
 double offline_move_freq = 0.3;
 bool isVisible = false;
 
-SCNNode *head_node;
-SCNNode *ball_node;
+SCNScene *scene;
 SCNMatrix4 plane_matrix;
 
 - (void)viewDidLoad {
@@ -45,21 +48,17 @@ SCNMatrix4 plane_matrix;
     self.sceneView.delegate = self;
     
     // Show statistics such as fps and timing information
-    self.sceneView.showsStatistics = YES;
-    
+//    self.sceneView.showsStatistics = YES;
+	
     // Create a new scene
-	SCNScene *scene = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
+	scene = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
 	SCNScene *scene_ball = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
 	[scene.rootNode addChildNode:scene_ball.rootNode.childNodes[0]];
 	
 	scene.rootNode.childNodes[0].name = @"head";
 	scene.rootNode.childNodes[1].name = @"ball";
 	
-	// retrieve the bb8 node
-	head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
-	ball_node = [scene.rootNode childNodeWithName:@"ball" recursively:YES];
-
-    // Set the scene to the view
+	// Set the scene to the view
     self.sceneView.scene = scene;
 	self.sceneView.debugOptions = ARSCNDebugOptionShowWorldOrigin;// | ARSCNDebugOptionShowFeaturePoints;
 	self.sceneView.automaticallyUpdatesLighting = YES;
@@ -81,7 +80,10 @@ SCNMatrix4 plane_matrix;
 	UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
 	NSMutableArray *gestureRecognizers = [NSMutableArray array];
 	[gestureRecognizers addObject:tapGesture];
+	UILongPressGestureRecognizer *lpGesture = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(handleLongPress:)];
+	[gestureRecognizers addObject:lpGesture];
 	[gestureRecognizers addObjectsFromArray:_sceneView.gestureRecognizers];
+
 	_sceneView.gestureRecognizers = gestureRecognizers;
 
 }
@@ -91,12 +93,17 @@ SCNMatrix4 plane_matrix;
 	ARWorldTrackingConfiguration *configuration = [ARWorldTrackingConfiguration new];
 	configuration.lightEstimationEnabled = YES;
 	configuration.planeDetection = ARPlaneDetectionHorizontal;
-	
+
 	// Run the view's session
 	[self.sceneView.session runWithConfiguration:configuration];
+	
+	ARCamera *camera = self.sceneView.session.currentFrame.camera;
+	
+	
 }
 - (void)insertSpotLight:(SCNVector3)position {
 	SCNNode *spotLightNode = [SCNNode new];
+	spotLightNode.name = @"spotlight";
 	spotLightNode.light = [SCNLight light];
 	spotLightNode.light.type = SCNLightTypeSpot;
 	spotLightNode.light.spotInnerAngle = 45;
@@ -131,6 +138,8 @@ SCNMatrix4 plane_matrix;
 	//	plane_node.position = SCNVector3Make(anchor.center.x,0,anchor.center.z);
 	//	plane_node.transform = SCNMatrix4FromMat4(anchor.transform);
 	plane_node.transform = SCNMatrix4Mult(SCNMatrix4MakeRotation(-M_PI/2.0, 1.0, 0.0, 0.0), SCNMatrix4FromMat4(anchor.transform));
+	
+	[self insertSpotLight:SCNVector3Make(0,2,0)];
 	
 	[_sceneView.scene.rootNode addChildNode:plane_node];
 }
@@ -199,7 +208,7 @@ SCNMatrix4 plane_matrix;
 			[self handleConnecting];
 			break;
 		case RKRobotOnline: {
-			_robotStatus.text = @"Online";
+			_robotStatus.text = @"";//Online";
 			// Do not allow the robot to connect if the application is not running
 			RKConvenienceRobot *convenience = [RKConvenienceRobot convenienceWithRobot:n.robot];
 			if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive) {
@@ -249,7 +258,7 @@ SCNMatrix4 plane_matrix;
 	double vx = p.x/(x_max/2.0) - 1.0;
 	double vy = p.y/(y_max/2.0) - 1.0;
 	double k = _speed_bar.value;//0.75*0.001;
-	NSLog(@"slidar %f", k);
+//	NSLog(@"slidar %f", k);
 	double heading = atan2(vx,-vy)*180.0/3.141592;
 	if(heading<0){
 		heading += 360;
@@ -285,6 +294,25 @@ SCNMatrix4 plane_matrix;
 		[SCNTransaction commit];
 	}
 }
+- (void) handleLongPress:(UIGestureRecognizer*)gestureRecognize
+{
+	if (gestureRecognize.state == UIGestureRecognizerStateBegan) {
+//		NSLog(@"長押し開始のタイミング");
+		SCNNode *splight_node = [scene.rootNode childNodeWithName:@"spotlight" recursively:YES];
+//		splight_node.light.castsShadow = NO;
+		
+		bool visible =  !_speed_bar.isHidden;
+		[_speed_bar setHidden:visible];
+		[_splight_title setHidden:visible];
+		[_splight_pos_x setHidden:visible];
+		[_splight_pos_x_input setHidden:visible];
+	
+		NSLog(@"%f",splight_node.position.x);
+		splight_node.position = SCNVector3Make([_splight_pos_x_input.text doubleValue],
+							splight_node.position.y,
+							splight_node.position.z);
+	}
+}
 
 
 #pragma mark - ARSCNViewDelegate
@@ -300,41 +328,61 @@ SCNMatrix4 plane_matrix;
 	if ([anchor isKindOfClass:[ARPlaneAnchor class]]){
 		//		NSLog(@"%@", NSStringFromClass([anchor class]));
 		plane_matrix = SCNMatrix4FromMat4(anchor.transform);
-		//		head_node.transform = SCNMatrix4FromMat4(anchor.transform);
-		//		NSLog(@"%f %f %f %f", head_node.transform.m11,head_node.transform.m12,
-		//			  head_node.transform.m13,head_node.transform.m14);
 		//		_sceneView.scene.rootNode.simdTransform = anchor.transform;
 		//		(ARPlaneAnchor *)anchor.position.x = 0;
 		[self drawplane:(ARPlaneAnchor *)anchor];
-		[self insertSpotLight:SCNVector3Make(0,10,0)];
 		isVisible = true;
 	}
 	
 }
 
 - (void) renderer:(id<SCNSceneRenderer>)renderer updateAtTime:(NSTimeInterval)time{
-	float scale = 0.116;//0.0365/0.315;
-	float zpos = offline_move_radius * sin(2*3.14*offline_move_freq*time);
-	
-	//ball matrix
-	SCNMatrix4 ballMat = SCNMatrix4MakeRotation(zpos/ball_radius,1.0,0.0,0.0);
-	ballMat = SCNMatrix4Translate(ballMat,0.0, ball_radius, zpos);
-	ball_node.transform = SCNMatrix4Mult(ballMat, plane_matrix);
+	SCNNode *ball_node = [scene.rootNode childNodeWithName:@"ball" recursively:YES];
+	SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
+
+	bool OFFLINE = true;//false;//
+	if(OFFLINE){
+		//ball matrix
+		float zpos = offline_move_radius * sin(2*3.14*offline_move_freq*time);
+		
+		//ball matrix
+		SCNMatrix4 ballMat = SCNMatrix4MakeRotation(zpos/ball_radius,1.0,0.0,0.0);
+		ballMat = SCNMatrix4Translate(ballMat,0.0, ball_radius, zpos);
+		ball_node.transform = SCNMatrix4Mult(ballMat, plane_matrix);
+		
+		//head matrix
+		SCNMatrix4 headMat = SCNMatrix4MakeTranslation(0.0, ball_radius, 0.0);
+		headMat = SCNMatrix4Rotate(headMat, 0.25*3.14 * sin(2*3.14*offline_move_freq*time), 1.0, 0.0, 0.0);
+		headMat = SCNMatrix4Translate(headMat,0.0, ball_radius, zpos);
+		head_node.transform = SCNMatrix4Mult(headMat, plane_matrix);
+		
+	}else{
+		//        double deg2rad = 3.141592/180.0;
+		double px = locData.position.x*0.01;
+		double py = locData.position.y*0.01;
+		SCNMatrix4 headMat = SCNMatrix4MakeTranslation(0.0, ball_radius, 0.0);
+		headMat = SCNMatrix4Rotate(headMat, 2.0*acos(quaternionData.quaternions.q0),
+								   -quaternionData.quaternions.q1,
+								   -quaternionData.quaternions.q3,
+								   quaternionData.quaternions.q2);
+		headMat = SCNMatrix4Translate(headMat,-px, ball_radius, py);
+		head_node.transform = SCNMatrix4Mult(headMat, plane_matrix);
+		
+		SCNMatrix4 ballMat = SCNMatrix4MakeRotation(py/ball_radius, 1.0, 0.0, 0.0);
+		ballMat = SCNMatrix4Rotate(ballMat, px/ball_radius, 0.0, 0.0, 1.0);
+		ballMat = SCNMatrix4Translate(ballMat,-px, ball_radius, py);
+		ball_node.transform = SCNMatrix4Mult(ballMat, plane_matrix);
+		//        ball_node.eulerAngles = SCNVector3Make(-attitudeData.pitch*deg2rad, attitudeData.yaw*deg2rad, attitudeData.roll*deg2rad);
+		
+	}
+	float scale = 0.116;//0.0365/0.315; // coeffs for cg 2 real
 	ball_node.scale = SCNVector3Make(scale,scale,scale);
-	
-	//head matrix
-	SCNMatrix4 headMat = SCNMatrix4MakeTranslation(0.0, ball_radius, 0.0);
-	headMat = SCNMatrix4Rotate(headMat, 0.25*3.14 * sin(2*3.14*offline_move_freq*time), 1.0, 0.0, 0.0);
-	headMat = SCNMatrix4Translate(headMat,0.0, ball_radius, zpos);
-	head_node.transform = SCNMatrix4Mult(headMat, plane_matrix);
 	head_node.scale = SCNVector3Make(scale,scale,scale);
 	
 	ARLightEstimate *estimate = _sceneView.session.currentFrame.lightEstimate;
 	if (!estimate) {
 		return;
 	}
-	// TODO: Put this on the screen
-	//	NSLog(@"light estimate: %f", estimate.ambientIntensity);
 }
 
 - (void) renderer:(id<SCNSceneRenderer>)renderer didApplyConstraintsAtTime:(NSTimeInterval) time{
@@ -390,4 +438,10 @@ SCNMatrix4 plane_matrix;
 	
 }
 
+- (IBAction)spligt_pos_x_input_exit:(id)sender {
+	SCNNode *splight_node = [scene.rootNode childNodeWithName:@"spotlight" recursively:YES];
+	splight_node.position = SCNVector3Make([_splight_pos_x_input.text doubleValue],
+										   splight_node.position.y,
+										   splight_node.position.z);
+}
 @end
