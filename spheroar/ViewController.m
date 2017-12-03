@@ -17,10 +17,29 @@
 @property (strong, nonatomic) IBOutlet UILabel *status;
 @property (strong, nonatomic) IBOutlet UISlider *speed_bar;
 @property (strong, nonatomic) IBOutlet UILabel *splight_title;
+@property (strong, nonatomic) IBOutlet UILabel *splight_pos_title;
 @property (strong, nonatomic) IBOutlet UILabel *splight_pos_x;
-@property (strong, nonatomic) IBOutlet UITextField *splight_pos_x_input;
-- (IBAction)spligt_pos_x_input_exit:(id)sender;
+@property (strong, nonatomic) IBOutlet UISlider *splight_pos_x_slider;
+@property (strong, nonatomic) IBOutlet UILabel *splight_pos_y;
+@property (strong, nonatomic) IBOutlet UISlider *splight_pos_y_slider;
+@property (strong, nonatomic) IBOutlet UILabel *splight_pos_z;
+@property (strong, nonatomic) IBOutlet UISlider *splight_pos_z_slider;
+@property (strong, nonatomic) IBOutlet UILabel *splight_pos_ex;
+@property (strong, nonatomic) IBOutlet UISlider *splight_pos_ex_slider;
+@property (strong, nonatomic) IBOutlet UILabel *splight_pos_ey;
+@property (strong, nonatomic) IBOutlet UISlider *splight_pos_ey_slider;
+@property (strong, nonatomic) IBOutlet UILabel *splight_pos_ez;
+@property (strong, nonatomic) IBOutlet UISlider *splight_pos_ez_slider;
 
+
+
+@property (strong, nonatomic) IBOutlet UILabel *splight_shadow_title;
+@property (strong, nonatomic) IBOutlet UILabel *splight_shadow_a;
+@property (strong, nonatomic) IBOutlet UISlider *splight_shadow_a_slider;
+@property (strong, nonatomic) IBOutlet UILabel *splight_shadow_radius;
+@property (strong, nonatomic) IBOutlet UISlider *splight_shadow_radius_slider;
+@property (strong, nonatomic) IBOutlet UILabel *splight_shadow_count;
+@property (strong, nonatomic) IBOutlet UISlider *splight_shadow_count_slider;
 @end
 
     
@@ -64,6 +83,8 @@ SCNMatrix4 plane_matrix;
 	self.sceneView.automaticallyUpdatesLighting = YES;
 
 	plane_matrix =SCNMatrix4MakeTranslation(0,-0.5,-0.5);
+	[self drawplanewithWidth:1.0 height:1.0 trans:&plane_matrix];
+	[self insertSpotLight:SCNVector3Make(0,2,0)];
 
 	//sphero
 	[[RKRobotDiscoveryAgent sharedAgent] addNotificationObserver:self selector:@selector(handleRobotStateChangeNotification:)];
@@ -112,7 +133,7 @@ SCNMatrix4 plane_matrix;
 	spotLightNode.light.shadowMode = SCNShadowModeDeferred;
 	spotLightNode.light.castsShadow = YES;
 	spotLightNode.light.shadowBias = 1000;
-	spotLightNode.light.shadowRadius = 100;
+	spotLightNode.light.shadowRadius = 10;
 	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:0.8];
 	spotLightNode.light.shadowMapSize = CGSizeMake(4000, 4000);
 	spotLightNode.light.shadowSampleCount = 1;
@@ -125,8 +146,8 @@ SCNMatrix4 plane_matrix;
 	spotLightNode.eulerAngles = SCNVector3Make(-M_PI / 2, 0, 0);
 	[_sceneView.scene.rootNode addChildNode: spotLightNode];
 }
-- (void)drawplane:(ARPlaneAnchor *)anchor {
-	SCNPlane *geometry = [SCNPlane planeWithWidth:anchor.extent.x height:anchor.extent.z];
+- (void)drawplanewithWidth:(float)w height:(float)h trans:(SCNMatrix4 *)mat {
+	SCNPlane *geometry = [SCNPlane planeWithWidth:w height:h];
 	SCNMaterial *material = [SCNMaterial new];
 	material.diffuse.contents = [UIColor colorWithWhite:0.0 alpha:0.001];//
 	//	UIImage *img = [UIImage imageNamed:@"art.scnassets/tron_grid"];
@@ -137,12 +158,12 @@ SCNMatrix4 plane_matrix;
 	plane_node.physicsBody = SCNPhysicsBody.staticBody;
 	//	plane_node.position = SCNVector3Make(anchor.center.x,0,anchor.center.z);
 	//	plane_node.transform = SCNMatrix4FromMat4(anchor.transform);
-	plane_node.transform = SCNMatrix4Mult(SCNMatrix4MakeRotation(-M_PI/2.0, 1.0, 0.0, 0.0), SCNMatrix4FromMat4(anchor.transform));
+	plane_node.transform = SCNMatrix4Mult(SCNMatrix4MakeRotation(-M_PI/2.0, 1.0, 0.0, 0.0), *mat);
 	
-	[self insertSpotLight:SCNVector3Make(0,2,0)];
 	
 	[_sceneView.scene.rootNode addChildNode:plane_node];
 }
+
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     
@@ -208,7 +229,7 @@ SCNMatrix4 plane_matrix;
 			[self handleConnecting];
 			break;
 		case RKRobotOnline: {
-			_robotStatus.text = @"";//Online";
+			_robotStatus.text = @"Online";
 			// Do not allow the robot to connect if the application is not running
 			RKConvenienceRobot *convenience = [RKConvenienceRobot convenienceWithRobot:n.robot];
 			if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive) {
@@ -304,13 +325,26 @@ SCNMatrix4 plane_matrix;
 		bool visible =  !_speed_bar.isHidden;
 		[_speed_bar setHidden:visible];
 		[_splight_title setHidden:visible];
+		[_splight_pos_title setHidden:visible];
 		[_splight_pos_x setHidden:visible];
-		[_splight_pos_x_input setHidden:visible];
-	
-		NSLog(@"%f",splight_node.position.x);
-		splight_node.position = SCNVector3Make([_splight_pos_x_input.text doubleValue],
-							splight_node.position.y,
-							splight_node.position.z);
+		[_splight_pos_x_slider setHidden:visible];
+		[_splight_pos_y setHidden:visible];
+		[_splight_pos_y_slider setHidden:visible];
+		[_splight_pos_z setHidden:visible];
+		[_splight_pos_z_slider setHidden:visible];
+		[_splight_pos_ex setHidden:visible];
+		[_splight_pos_ex_slider setHidden:visible];
+		[_splight_pos_ey setHidden:visible];
+		[_splight_pos_ey_slider setHidden:visible];
+		[_splight_pos_ez setHidden:visible];
+		[_splight_pos_ez_slider setHidden:visible];
+		[_splight_shadow_title setHidden:visible];
+		[_splight_shadow_a setHidden:visible];
+		[_splight_shadow_a_slider setHidden:visible];
+		[_splight_shadow_radius setHidden:visible];
+		[_splight_shadow_radius_slider setHidden:visible];
+		[_splight_shadow_count setHidden:visible];
+		[_splight_shadow_count_slider setHidden:visible];
 	}
 }
 
@@ -330,7 +364,9 @@ SCNMatrix4 plane_matrix;
 		plane_matrix = SCNMatrix4FromMat4(anchor.transform);
 		//		_sceneView.scene.rootNode.simdTransform = anchor.transform;
 		//		(ARPlaneAnchor *)anchor.position.x = 0;
-		[self drawplane:(ARPlaneAnchor *)anchor];
+//		[self drawplane:(ARPlaneAnchor *)anchor];
+		[self drawplanewithWidth:((ARPlaneAnchor *)anchor).extent.x height:((ARPlaneAnchor *)anchor).extent.z trans:&plane_matrix];
+
 		isVisible = true;
 	}
 	
@@ -340,7 +376,7 @@ SCNMatrix4 plane_matrix;
 	SCNNode *ball_node = [scene.rootNode childNodeWithName:@"ball" recursively:YES];
 	SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
 
-	bool OFFLINE = true;//false;//
+	bool OFFLINE = false;//true;//
 	if(OFFLINE){
 		//ball matrix
 		float zpos = offline_move_radius * sin(2*3.14*offline_move_freq*time);
@@ -382,6 +418,10 @@ SCNMatrix4 plane_matrix;
 	ARLightEstimate *estimate = _sceneView.session.currentFrame.lightEstimate;
 	if (!estimate) {
 		return;
+	}else{
+		CGFloat intensity = estimate.ambientIntensity / 1000.0;
+//		NSLog(@"light %f", intensity);
+		scene.lightingEnvironment.intensity = intensity;
 	}
 }
 
@@ -429,7 +469,7 @@ SCNMatrix4 plane_matrix;
 			}
 			break;
 		case ARTrackingStateNormal:
-			_status.text = @"";
+			_status.text = @"Ready";
 			break;
 			//		if !chameleon.isVisible() {
 			//			message = "Move to find a horizontal surface"
@@ -437,11 +477,45 @@ SCNMatrix4 plane_matrix;
 	}
 	
 }
-
-- (IBAction)spligt_pos_x_input_exit:(id)sender {
+- (void)splight_pose_change{
 	SCNNode *splight_node = [scene.rootNode childNodeWithName:@"spotlight" recursively:YES];
-	splight_node.position = SCNVector3Make([_splight_pos_x_input.text doubleValue],
-										   splight_node.position.y,
-										   splight_node.position.z);
+	NSLog(@"splight pos %f, %f, %f",_splight_pos_x_slider.value, _splight_pos_y_slider.value, _splight_pos_z_slider.value);
+	splight_node.position = SCNVector3Make(_splight_pos_x_slider.value, _splight_pos_y_slider.value, _splight_pos_z_slider.value );
+	splight_node.eulerAngles = SCNVector3Make(_splight_pos_ex_slider.value, _splight_pos_ey_slider.value, _splight_pos_ez_slider.value );
+
+	splight_node.transform = SCNMatrix4Mult(splight_node.transform, plane_matrix);
+}
+- (IBAction)splight_pos_x_change:(id)sender {
+	[self splight_pose_change];
+}
+- (IBAction)splight_pos_y_change:(id)sender {
+	[self splight_pose_change];
+}
+- (IBAction)splight_pos_z_change:(id)sender {
+	[self splight_pose_change];
+}
+- (IBAction)splight_pos_ex_change:(id)sender {
+	[self splight_pose_change];
+}
+- (IBAction)splight_pos_ey_change:(id)sender {
+	[self splight_pose_change];
+}
+- (IBAction)splight_pos_ez_change:(id)sender {
+	[self splight_pose_change];
+}
+- (void)splight_shadow_param_change{
+	SCNNode *splight_node = [scene.rootNode childNodeWithName:@"spotlight" recursively:YES];
+	splight_node.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
+	splight_node.light.shadowRadius = (int)_splight_shadow_radius_slider.value;
+	splight_node.light.shadowSampleCount = (int)_splight_shadow_count_slider.value;
+}
+- (IBAction)splight_shadow_a_change:(id)sender {
+	[self splight_shadow_param_change];
+}
+- (IBAction)splight_shadow_radius_change:(id)sender {
+	[self splight_shadow_param_change];
+}
+- (IBAction)splight_shadow_count_change:(id)sender {
+	[self splight_shadow_param_change];
 }
 @end
