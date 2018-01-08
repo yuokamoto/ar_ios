@@ -31,8 +31,6 @@
 @property (strong, nonatomic) IBOutlet UILabel *splight_pos_ez;
 @property (strong, nonatomic) IBOutlet UISlider *splight_pos_ez_slider;
 
-
-
 @property (strong, nonatomic) IBOutlet UILabel *splight_shadow_title;
 @property (strong, nonatomic) IBOutlet UILabel *splight_shadow_a;
 @property (strong, nonatomic) IBOutlet UISlider *splight_shadow_a_slider;
@@ -40,6 +38,11 @@
 @property (strong, nonatomic) IBOutlet UISlider *splight_shadow_radius_slider;
 @property (strong, nonatomic) IBOutlet UILabel *splight_shadow_count;
 @property (strong, nonatomic) IBOutlet UISlider *splight_shadow_count_slider;
+
+@property (strong, nonatomic) IBOutlet UILabel *amblight_title;
+@property (strong, nonatomic) IBOutlet UILabel *amblight_intens;
+@property (strong, nonatomic) IBOutlet UISlider *amblight_intens_slider;
+
 @end
 
     
@@ -52,40 +55,72 @@ RKAttitudeData *attitudeData;
 RKQuaternionData *quaternionData;
 RKLocatorData *locData;
 
-double ball_radius = 0.0365;//0.2;
-double offline_move_radius = 0.1;
-double offline_move_freq = 0.3;
+float ball_radius = 0.0365;//0.2;
+float offline_move_radius = 0.1;
+float offline_move_freq = 0.3;
 bool isVisible = false;
 
 SCNScene *scene;
 SCNMatrix4 plane_matrix;
+SCNMatrix4 m_head_pre;
+SCNMatrix4 m_ball_pre;
+//SCNProgram *program;
+//SCNProgram *program1;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
 
     // Set the view's delegate
     self.sceneView.delegate = self;
-    
+
     // Show statistics such as fps and timing information
 //    self.sceneView.showsStatistics = YES;
 	
     // Create a new scene
 	scene = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
+	SCNScene *scene_head_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
+	[scene.rootNode addChildNode:scene_head_vel.rootNode.childNodes[0]];
 	SCNScene *scene_ball = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
 	[scene.rootNode addChildNode:scene_ball.rootNode.childNodes[0]];
-	
+	SCNScene *scene_ball_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
+	[scene.rootNode addChildNode:scene_ball_vel.rootNode.childNodes[0]];
+
 	scene.rootNode.childNodes[0].name = @"head";
-	scene.rootNode.childNodes[1].name = @"ball";
+	scene.rootNode.childNodes[1].name = @"head_vel";
+	scene.rootNode.childNodes[2].name = @"ball";
+	scene.rootNode.childNodes[3].name = @"ball_vel";
+//	NSLog(@"%@",(NSString *)scene.rootNode.childNodes);
+	
+	SCNProgram *program = [SCNProgram alloc];
+	program.vertexFunctionName = @"velocity_vertex";
+	program.fragmentFunctionName = @"velocity_fragment";
+	SCNNode *ball_vel_node = [scene.rootNode childNodeWithName:@"ball_vel" recursively:YES];
+	SCNNode *head_vel_node = [scene.rootNode childNodeWithName:@"head_vel" recursively:YES];
+	head_vel_node.geometry.materials[1].program = program; //must
+	head_vel_node.geometry.materials[0].program = program;
+	ball_vel_node.geometry.materials[1].program = program; //must
+	ball_vel_node.geometry.materials[0].program = program;
 	
 	// Set the scene to the view
     self.sceneView.scene = scene;
-	self.sceneView.debugOptions = ARSCNDebugOptionShowWorldOrigin;// | ARSCNDebugOptionShowFeaturePoints;
+//	self.sceneView.debugOptions = ARSCNDebugOptionShowWorldOrigin;// | ARSCNDebugOptionShowFeaturePoints;
 	self.sceneView.automaticallyUpdatesLighting = YES;
 
 	plane_matrix =SCNMatrix4MakeTranslation(0,-0.5,-0.5);
-	[self drawplanewithWidth:1.0 height:1.0 trans:&plane_matrix];
-	[self insertSpotLight:SCNVector3Make(0,2,0)];
+	m_head_pre = SCNMatrix4Identity;
+	m_ball_pre = SCNMatrix4Identity;
+//	[self drawplanewithWidth:1.0 height:1.0 trans:&plane_matrix];
+//	[self insertSpotLight:SCNVector3Make(0,2,0)];
 
+	// create and add an ambient light to the scene
+	SCNNode *ambientLightNode = [SCNNode node];
+	ambientLightNode.light = [SCNLight light];
+	ambientLightNode.name = @"amblight";
+	ambientLightNode.light.type = SCNLightTypeAmbient;
+	ambientLightNode.light.color = [UIColor whiteColor];
+	ambientLightNode.light.intensity = 100.0;
+	[scene.rootNode addChildNode:ambientLightNode];
+	
 	//sphero
 	[[RKRobotDiscoveryAgent sharedAgent] addNotificationObserver:self selector:@selector(handleRobotStateChangeNotification:)];
 	
@@ -106,6 +141,16 @@ SCNMatrix4 plane_matrix;
 	[gestureRecognizers addObjectsFromArray:_sceneView.gestureRecognizers];
 
 	_sceneView.gestureRecognizers = gestureRecognizers;
+	
+	NSURL *url;
+	url = [[NSBundle mainBundle] URLForResource:@"motion_blur" withExtension:@"plist"];
+	NSDictionary *dictionary = [NSDictionary dictionaryWithContentsOfURL:url];
+//		for (id key in [dictionary keyEnumerator]) {
+//			NSLog(@"Key:%@ Value:%@", key, [dictionary valueForKey:key]);
+//		}
+	SCNTechnique *technique = [SCNTechnique techniqueWithDictionary:dictionary];
+	
+	_sceneView.technique = technique;
 
 }
 
@@ -118,7 +163,7 @@ SCNMatrix4 plane_matrix;
 	// Run the view's session
 	[self.sceneView.session runWithConfiguration:configuration];
 	
-	ARCamera *camera = self.sceneView.session.currentFrame.camera;
+//	ARCamera *camera = self.sceneView.session.currentFrame.camera;
 	
 	
 }
@@ -345,6 +390,9 @@ SCNMatrix4 plane_matrix;
 		[_splight_shadow_radius_slider setHidden:visible];
 		[_splight_shadow_count setHidden:visible];
 		[_splight_shadow_count_slider setHidden:visible];
+		[_amblight_title setHidden:visible];
+		[_amblight_intens setHidden:visible];
+		[_amblight_intens_slider setHidden:visible];
 	}
 }
 
@@ -366,7 +414,7 @@ SCNMatrix4 plane_matrix;
 		//		(ARPlaneAnchor *)anchor.position.x = 0;
 //		[self drawplane:(ARPlaneAnchor *)anchor];
 		[self drawplanewithWidth:((ARPlaneAnchor *)anchor).extent.x height:((ARPlaneAnchor *)anchor).extent.z trans:&plane_matrix];
-
+		[self insertSpotLight:SCNVector3Make(0,2,0)];
 		isVisible = true;
 	}
 	
@@ -375,8 +423,13 @@ SCNMatrix4 plane_matrix;
 - (void) renderer:(id<SCNSceneRenderer>)renderer updateAtTime:(NSTimeInterval)time{
 	SCNNode *ball_node = [scene.rootNode childNodeWithName:@"ball" recursively:YES];
 	SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
-
-	bool OFFLINE = false;//true;//
+	SCNNode *ball_vel_node = [scene.rootNode childNodeWithName:@"ball_vel" recursively:YES];
+	SCNNode *head_vel_node = [scene.rootNode childNodeWithName:@"head_vel" recursively:YES];
+//	CIFilter *blur = [CIFilter filterWithName:@"CIGaussianBlur" keysAndValues:@"inputRadius", @1.0f, nil];
+//	NSArray *filter = [NSArray arrayWithObjects:blur];
+//	[ball_node setFilters:filter];
+	
+	bool OFFLINE = true;//false;//
 	if(OFFLINE){
 		//ball matrix
 		float zpos = offline_move_radius * sin(2*3.14*offline_move_freq*time);
@@ -384,14 +437,22 @@ SCNMatrix4 plane_matrix;
 		//ball matrix
 		SCNMatrix4 ballMat = SCNMatrix4MakeRotation(zpos/ball_radius,1.0,0.0,0.0);
 		ballMat = SCNMatrix4Translate(ballMat,0.0, ball_radius, zpos);
-		ball_node.transform = SCNMatrix4Mult(ballMat, plane_matrix);
+		
+		//temp for motion blur check
+//		ballMat = SCNMatrix4MakeTranslation(zpos, 0, 0);
+
+		ball_node.transform =SCNMatrix4Mult(ballMat, plane_matrix);
 		
 		//head matrix
 		SCNMatrix4 headMat = SCNMatrix4MakeTranslation(0.0, ball_radius, 0.0);
 		headMat = SCNMatrix4Rotate(headMat, 0.25*3.14 * sin(2*3.14*offline_move_freq*time), 1.0, 0.0, 0.0);
 		headMat = SCNMatrix4Translate(headMat,0.0, ball_radius, zpos);
+
+		//temp for motion blur check
+//		headMat = SCNMatrix4MakeTranslation(zpos, ball_radius*1.0, 0);
+
 		head_node.transform = SCNMatrix4Mult(headMat, plane_matrix);
-		
+
 	}else{
 		//        double deg2rad = 3.141592/180.0;
 		double px = locData.position.x*0.01;
@@ -411,18 +472,48 @@ SCNMatrix4 plane_matrix;
 		//        ball_node.eulerAngles = SCNVector3Make(-attitudeData.pitch*deg2rad, attitudeData.yaw*deg2rad, attitudeData.roll*deg2rad);
 		
 	}
+	
 	float scale = 0.116;//0.0365/0.315; // coeffs for cg 2 real
+	float scale_vel = scale*0.99;
+
 	ball_node.scale = SCNVector3Make(scale,scale,scale);
 	head_node.scale = SCNVector3Make(scale,scale,scale);
 	
-	ARLightEstimate *estimate = _sceneView.session.currentFrame.lightEstimate;
-	if (!estimate) {
-		return;
-	}else{
-		CGFloat intensity = estimate.ambientIntensity / 1000.0;
-//		NSLog(@"light %f", intensity);
-		scene.lightingEnvironment.intensity = intensity;
+	//motion blur node
+	head_vel_node.transform = head_node.transform;
+	head_vel_node.scale =  SCNVector3Make(scale_vel,scale_vel,scale_vel);
+	ball_vel_node.transform = ball_node.transform;
+	ball_vel_node.scale =  SCNVector3Make(scale_vel,scale_vel,scale_vel);
+	
+	SCNMatrix4 m_head =  head_vel_node.transform;
+	if(SCNMatrix4IsIdentity(m_head_pre)){
+		m_head_pre = m_head;
 	}
+	NSValue *uniformdata_head = [NSValue valueWithSCNMatrix4:m_head_pre];
+	[head_vel_node.geometry.materials[0] setValue:uniformdata_head forKey:@"vmvp"];
+	[head_vel_node.geometry.materials[1] setValue:uniformdata_head forKey:@"vmvp"];
+	
+	m_head_pre = m_head;
+	
+	SCNMatrix4 m_ball =  ball_node.transform;
+	if(SCNMatrix4IsIdentity(m_ball_pre)){
+		m_ball_pre = m_ball;
+	}
+	NSValue *uniformdata_ball = [NSValue valueWithSCNMatrix4:m_ball_pre];
+	[ball_vel_node.geometry.materials[0] setValue:uniformdata_ball forKey:@"vmvp"];
+	[ball_vel_node.geometry.materials[1] setValue:uniformdata_ball forKey:@"vmvp"];
+
+	m_ball_pre = m_ball;
+	//	ARLightEstimate *estimate = _sceneView.session.currentFrame.lightEstimate;
+//	if (!estimate) {
+//		return;
+//	}else{
+//		CGFloat intensity = estimate.ambientIntensity / 1000.0;
+////		NSLog(@"light %f", intensity);
+////		scene.lightingEnvironment.intensity = intensity;
+//	}
+//	NSLog(@"light %f", scene.lightingEnvironment.intensity);
+//	scene.lightingEnvironment.intensity = 1000.0;
 }
 
 - (void) renderer:(id<SCNSceneRenderer>)renderer didApplyConstraintsAtTime:(NSTimeInterval) time{
@@ -517,5 +608,12 @@ SCNMatrix4 plane_matrix;
 }
 - (IBAction)splight_shadow_count_change:(id)sender {
 	[self splight_shadow_param_change];
+}
+- (void)amblight_param_change{
+	SCNNode *amblight_node = [scene.rootNode childNodeWithName:@"amblight" recursively:YES];
+	amblight_node.light.intensity = _amblight_intens_slider.value;
+}
+- (IBAction)amblight_intens_change:(id)sender {
+	[self amblight_param_change];
 }
 @end
