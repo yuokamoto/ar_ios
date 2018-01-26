@@ -80,15 +80,21 @@ SCNMatrix4 m_ball_pre;
 	scene = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
 	SCNScene *scene_head_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
 	[scene.rootNode addChildNode:scene_head_vel.rootNode.childNodes[0]];
+//	SCNScene *scene_head_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
+//	[scene.rootNode addChildNode:scene_head_dis.rootNode.childNodes[0]];
 	SCNScene *scene_ball = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
 	[scene.rootNode addChildNode:scene_ball.rootNode.childNodes[0]];
 	SCNScene *scene_ball_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
 	[scene.rootNode addChildNode:scene_ball_vel.rootNode.childNodes[0]];
+//	SCNScene *scene_ball_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
+//	[scene.rootNode addChildNode:scene_ball_dis.rootNode.childNodes[0]];
 
 	scene.rootNode.childNodes[0].name = @"head";
 	scene.rootNode.childNodes[1].name = @"head_vel";
+//	scene.rootNode.childNodes[2].name = @"head_dis";
 	scene.rootNode.childNodes[2].name = @"ball";
 	scene.rootNode.childNodes[3].name = @"ball_vel";
+//	scene.rootNode.childNodes[5].name = @"ball_dis";
 //	NSLog(@"%@",(NSString *)scene.rootNode.childNodes);
 	
 	SCNProgram *program = [SCNProgram alloc];
@@ -101,12 +107,22 @@ SCNMatrix4 m_ball_pre;
 	ball_vel_node.geometry.materials[1].program = program; //must
 	ball_vel_node.geometry.materials[0].program = program;
 	
+//	SCNProgram *program_dis = [SCNProgram alloc];
+//	program_dis.vertexFunctionName = @"distance_vertex";
+//	program_dis.fragmentFunctionName = @"distance_fragment";
+//	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
+//	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
+//	head_dis_node.geometry.materials[1].program = program_dis; //must
+//	head_dis_node.geometry.materials[0].program = program_dis;
+//	ball_dis_node.geometry.materials[1].program = program_dis; //must
+//	ball_dis_node.geometry.materials[0].program = program_dis;
+
 	// Set the scene to the view
     self.sceneView.scene = scene;
 //	self.sceneView.debugOptions = ARSCNDebugOptionShowWorldOrigin;// | ARSCNDebugOptionShowFeaturePoints;
 	self.sceneView.automaticallyUpdatesLighting = YES;
 
-	plane_matrix =SCNMatrix4MakeTranslation(0,-0.5,-0.5);
+	plane_matrix =SCNMatrix4MakeTranslation(0,-0.15,-0.15);
 	m_head_pre = SCNMatrix4Identity;
 	m_ball_pre = SCNMatrix4Identity;
 //	[self drawplanewithWidth:1.0 height:1.0 trans:&plane_matrix];
@@ -425,6 +441,9 @@ SCNMatrix4 m_ball_pre;
 	SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
 	SCNNode *ball_vel_node = [scene.rootNode childNodeWithName:@"ball_vel" recursively:YES];
 	SCNNode *head_vel_node = [scene.rootNode childNodeWithName:@"head_vel" recursively:YES];
+//	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
+//	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
+
 //	CIFilter *blur = [CIFilter filterWithName:@"CIGaussianBlur" keysAndValues:@"inputRadius", @1.0f, nil];
 //	NSArray *filter = [NSArray arrayWithObjects:blur];
 //	[ball_node setFilters:filter];
@@ -439,7 +458,7 @@ SCNMatrix4 m_ball_pre;
 		ballMat = SCNMatrix4Translate(ballMat,0.0, ball_radius, zpos);
 		
 		//temp for motion blur check
-//		ballMat = SCNMatrix4MakeTranslation(zpos, 0, 0);
+//		ballMat = SCNMatrix4MakeTranslation(zpos*0, 0, 0);
 
 		ball_node.transform =SCNMatrix4Mult(ballMat, plane_matrix);
 		
@@ -449,7 +468,7 @@ SCNMatrix4 m_ball_pre;
 		headMat = SCNMatrix4Translate(headMat,0.0, ball_radius, zpos);
 
 		//temp for motion blur check
-//		headMat = SCNMatrix4MakeTranslation(zpos, ball_radius*1.0, 0);
+//		headMat = SCNMatrix4MakeTranslation(zpos*0, ball_radius*1.0, 0);
 
 		head_node.transform = SCNMatrix4Mult(headMat, plane_matrix);
 
@@ -504,6 +523,11 @@ SCNMatrix4 m_ball_pre;
 	[ball_vel_node.geometry.materials[1] setValue:uniformdata_ball forKey:@"vmvp"];
 
 	m_ball_pre = m_ball;
+	
+	//node for distance from camera
+//	ball_dis_node.transform = ball_vel_node.transform;
+//	head_dis_node.transform = head_vel_node.transform;
+
 	//	ARLightEstimate *estimate = _sceneView.session.currentFrame.lightEstimate;
 //	if (!estimate) {
 //		return;

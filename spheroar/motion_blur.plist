@@ -8,11 +8,6 @@
 		<dict>
 			<key>inputs</key>
 			<dict/>
-			<!--
-				<key>vmvp</key>
-				<string>vmvp_head-symbol</string>
-			</dict>
-			 -->
 			<key>outputs</key>
 			<dict>
 				<key>color</key>
@@ -54,7 +49,7 @@
 			<key>inputs</key>
 			<dict>
 				<key>colorSampler</key>
-				<string>COLOR</string>
+				<string>gaus_blur_scene</string>
 				<key>headVelSampler</key>
 				<string>head_vel_scene</string>
 				<key>ballVelSampler</key>
@@ -74,9 +69,77 @@
 			<key>draw</key>
 			<string>DRAW_QUAD</string>
 		</dict>
+		<key>head_dis</key>
+		<dict>
+			<key>inputs</key>
+			<dict/>
+			<key>outputs</key>
+			<dict>
+				<key>color</key>
+				<string>head_dis_scene</string>
+			</dict>
+			<key>metalFragmentShader</key>
+			<string>distance_fragment</string>
+			<key>metalVertexShader</key>
+			<string>distance_vertex</string>
+			<key>program</key>
+			<string>doesntexist</string>
+			<key>draw</key>
+			<string>DRAW_NODE</string>
+			<key>node</key>
+			<string>head</string>
+		</dict>
+		<key>ball_dis</key>
+		<dict>
+			<key>inputs</key>
+			<dict/>
+			<key>outputs</key>
+			<dict>
+				<key>color</key>
+				<string>ball_dis_scene</string>
+			</dict>
+			<key>metalFragmentShader</key>
+			<string>distance_fragment</string>
+			<key>metalVertexShader</key>
+			<string>distance_vertex</string>
+			<key>program</key>
+			<string>doesntexist</string>
+			<key>draw</key>
+			<string>DRAW_NODE</string>
+			<key>node</key>
+			<string>ball</string>
+		</dict>
+		<key>gaus_blur</key>
+		<dict>
+			<key>draw</key>
+			<string>DRAW_QUAD</string>
+			<key>program</key>
+			<string>doesntexist</string>
+			<key>metalVertexShader</key>
+			<string>blur_vertex</string>
+			<key>metalFragmentShader</key>
+			<string>blur_flagment</string>
+			<key>inputs</key>
+			<dict>
+				<key>colorSampler</key>
+				<string>COLOR</string>
+				<key>headDisSampler</key>
+				<string>head_dis_scene</string>
+				<key>ballDisSampler</key>
+				<string>ball_dis_scene</string>
+			</dict>
+			<key>outputs</key>
+			<dict>
+				<key>color</key>
+				<string>gaus_blur_scene</string>
+			</dict>
+		</dict>
 	</dict>
 	<key>sequence</key>
 	<array>
+		<string>head_dis</string>
+		<string>ball_dis</string>
+		<string>gaus_blur</string>
 		<string>head_vel</string>
 		<string>ball_vel</string>
 		<string>motion_blur</string>
@@ -96,6 +159,21 @@
 			<string>color</string>
 		</dict>
 		<key>ball_vel_scene</key>
+		<dict>
+			<key>type</key>
+			<string>color</string>
+		</dict>
+		<key>head_dis_scene</key>
+		<dict>
+			<key>type</key>
+			<string>color</string>
+		</dict>
+		<key>ball_dis_scene</key>
+		<dict>
+			<key>type</key>
+			<string>color</string>
+		</dict>
+		<key>gaus_blur_scene</key>
 		<dict>
 			<key>type</key>
 			<string>color</string>

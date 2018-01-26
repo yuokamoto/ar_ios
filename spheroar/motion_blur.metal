@@ -61,6 +61,105 @@ fragment half4 pass_through_fragment(out_vertex_t vert [[stage_in]],
 }
 
 ////////////////////
+//gaussian blur
+struct out_blur_vertex_t
+{
+	float4 position [[position]];
+	float2 uv;
+	float distance_from_camera;
+};
+vertex out_blur_vertex_t blur_vertex(custom_vertex_t in [[stage_in]],
+									 constant SCNSceneBuffer& scn_frame [[buffer(0)]],
+									 constant custom_node_t3& scn_node [[buffer(1)]]
+									 )
+{
+	out_blur_vertex_t out;
+	out.position = in.position;
+	out.uv = float2((out.position.x + 1.0) * 0.5  , (out.position.y + 1.0) * -0.5);
+	//	out.distance_from_camera = scn_frame.viewTransform*in.position
+	return out;
+};
+
+//gausiaan weight calculation from
+//http://dev.theomader.com/gaussian-kernel-calculator/
+constant float weight_gb9[] = {
+	0, 0.000001, 0.000014, 0.000055, 0.000088, 0.000055, 0.000014, 0.000001, 0,
+	0.000001, 0.000036, 0.000362, 0.001445, 0.002289, 0.001445, 0.000362, 0.000036, 0.000001,
+	0.000014, 0.000362, 0.003672, 0.014648, 0.023205, 0.014648, 0.003672, 0.000362, 0.000014,
+	0.000055, 0.001445, 0.014648, 0.058434, 0.092566, 0.058434, 0.014648, 0.001445, 0.000055,
+	0.000088, 0.002289, 0.023205, 0.092566, 0.146634, 0.092566, 0.023205, 0.002289, 0.000088,
+	0.000055, 0.001445, 0.014648, 0.058434, 0.092566, 0.058434, 0.014648, 0.001445, 0.000055,
+	0.000014, 0.000362, 0.003672, 0.014648, 0.023205, 0.014648, 0.003672, 0.000362, 0.000014,
+	0.000001, 0.000036, 0.000362, 0.001445, 0.002289, 0.001445, 0.000362, 0.000036, 0.000001,
+	0, 0.000001, 0.000014, 0.000055, 0.000088, 0.000055, 0.000014, 0.000001, 0
+};
+fragment half4 blur_flagment(out_blur_vertex_t vert [[stage_in]],
+							 texture2d<float, access::sample> colorSampler [[texture(0)]],
+							 texture2d<float, access::sample> headDisSampler [[texture(1)]],
+							 texture2d<float, access::sample> ballDisSampler [[texture(2)]]
+							 )
+{
+	
+	float4 sum = float4(0.0);
+	
+	//our original texcoord for this fragment
+	float2 tc = vert.uv;
+	
+	//the amount to blur, i.e. how far off center to sample from
+	//1.0 -> blur by one pixel
+	//2.0 -> blur by two pixels, etc.
+	float4 head_dis = headDisSampler.sample(s, float2(tc.x, tc.y));
+	float4 ball_dis = ballDisSampler.sample(s, float2(tc.x, tc.y));
+	float4 distance = ball_dis;
+	if( (head_dis.z < ball_dis.z && head_dis.z>0 && ball_dis.z>0) ||
+	   (head_dis.z>0 && ball_dis.z==0) ){
+		distance = head_dis;
+	}
+	float blur = fabs((distance.z*100.0-0.30)*0.01);///500.0;
+	if(distance.z==0){
+		blur = 0.0;
+	}
+	
+	for (int i=-4; i<5; i++) {
+		for (int j=-4; j<5; j++) {
+			sum += colorSampler.sample(s, float2(tc.x + j*blur, tc.y + i*blur)) * weight_gb9[ 9*(i+4)+(j+4) ];
+		}
+	}
+	
+	//discard alpha for our simple demo, multiply by vertex color and return
+	sum.a = 1.0;
+//	return half4(colorSampler.sample(s, float2(tc.x, tc.y)));
+	return half4(sum);//half4(distance);//half4(distance);//
+}
+
+////////////////////
+//distance from camera
+struct dis_vertex_t
+{
+	float4 position [[position]];
+	float4 mv_position;
+};
+
+vertex dis_vertex_t distance_vertex(custom_vertex_t in [[stage_in]],
+									constant SCNSceneBuffer& scn_frame [[buffer(0)]],
+									constant custom_node_t3& scn_node [[buffer(1)]]
+									)
+{
+	dis_vertex_t out;
+	out.position = scn_node.modelViewProjectionTransform*in.position;
+	out.mv_position = scn_node.modelViewTransform*in.position;
+	return out;
+};
+
+
+fragment float4 distance_fragment(dis_vertex_t vert [[stage_in]])
+{
+	float z = fabs(vert.mv_position.z)*0.01;
+	//	z = z;
+	return float4(0.0, 0, z, 1.0);
+}
+
+////////////////////
 //velocity
 struct vel_vertex_t
 {
