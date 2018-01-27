@@ -87,7 +87,7 @@
 			<key>draw</key>
 			<string>DRAW_NODE</string>
 			<key>node</key>
-			<string>head</string>
+			<string>head_dis</string>
 		</dict>
 		<key>ball_dis</key>
 		<dict>
@@ -107,7 +107,7 @@
 			<key>draw</key>
 			<string>DRAW_NODE</string>
 			<key>node</key>
-			<string>ball</string>
+			<string>ball_dis</string>
 		</dict>
 		<key>gaus_blur</key>
 		<dict>

@@ -110,19 +110,19 @@ fragment half4 blur_flagment(out_blur_vertex_t vert [[stage_in]],
 	//2.0 -> blur by two pixels, etc.
 	float4 head_dis = headDisSampler.sample(s, float2(tc.x, tc.y));
 	float4 ball_dis = ballDisSampler.sample(s, float2(tc.x, tc.y));
-	float4 distance = ball_dis;
+	float distance = ball_dis.z;
 	if( (head_dis.z < ball_dis.z && head_dis.z>0 && ball_dis.z>0) ||
 	   (head_dis.z>0 && ball_dis.z==0) ){
-		distance = head_dis;
+		distance = head_dis.z;
 	}
-	float blur = fabs((distance.z*100.0-0.30)*0.01);///500.0;
-	if(distance.z==0){
-		blur = 0.0;
-	}
-	
+//	float blur = fabs((distance.z*100.0-0.30)*0.01);///500.0;
+//	if(distance.z==0){
+//		distance.z = 0.0;
+//	}
+//	blur = 0.0;
 	for (int i=-4; i<5; i++) {
 		for (int j=-4; j<5; j++) {
-			sum += colorSampler.sample(s, float2(tc.x + j*blur, tc.y + i*blur)) * weight_gb9[ 9*(i+4)+(j+4) ];
+			sum += colorSampler.sample(s, float2(tc.x + j*distance, tc.y + i*distance)) * weight_gb9[ 9*(i+4)+(j+4) ];
 		}
 	}
 	
@@ -138,24 +138,37 @@ struct dis_vertex_t
 {
 	float4 position [[position]];
 	float4 mv_position;
+	float gbc;
+	float gbk;
+};
+
+struct gb_uniform
+{
+	float gbc;
+	float gbk;
 };
 
 vertex dis_vertex_t distance_vertex(custom_vertex_t in [[stage_in]],
 									constant SCNSceneBuffer& scn_frame [[buffer(0)]],
-									constant custom_node_t3& scn_node [[buffer(1)]]
+									constant custom_node_t3& scn_node [[buffer(1)]],
+									constant gb_uniform& uniform [[buffer(2)]]
 									)
 {
 	dis_vertex_t out;
 	out.position = scn_node.modelViewProjectionTransform*in.position;
 	out.mv_position = scn_node.modelViewTransform*in.position;
+	out.gbc = uniform.gbc;
+	out.gbk = uniform.gbk;
 	return out;
 };
 
 
 fragment float4 distance_fragment(dis_vertex_t vert [[stage_in]])
 {
-	float z = fabs(vert.mv_position.z)*0.01;
-	//	z = z;
+	float z = 0.0;
+	if(vert.mv_position.z!=0){
+		z = fabs(vert.mv_position.z+vert.gbc)*vert.gbk;//fabs(vert.mv_position.z)*0.01;
+	}
 	return float4(0.0, 0, z, 1.0);
 }
 
@@ -168,21 +181,23 @@ struct vel_vertex_t
 //	float2 uv;
 };
 
-//struct node_uniform
-//{
-//	float4x4 mv;
-//};
+struct mb_uniform
+{
+	float4x4 m;
+	float k;
+};
 
 vertex vel_vertex_t velocity_vertex(custom_vertex_t in [[stage_in]],
 										constant SCNSceneBuffer& scn_frame [[buffer(0)]],
 										constant custom_node_t3& scn_node [[buffer(1)]],
-										constant float4x4& vmvp [[buffer(2)]]
+//										constant float4x4& vmvp [[buffer(2)]]
+										constant mb_uniform& uniform [[buffer(2)]]
 										)
 {
 	vel_vertex_t out;
 	out.position = scn_node.modelViewProjectionTransform*in.position;
-	float4 pos_pre = scn_frame.projectionTransform*scn_frame.viewTransform* vmvp*in.position;
-	out.velocity = ( out.position - pos_pre).xyz;
+	float4 pos_pre = scn_frame.projectionTransform*scn_frame.viewTransform*uniform.m*in.position;
+	out.velocity = uniform.k*( out.position - pos_pre).xyz;
 //	out.velocity = in.position.xyz;
 //	out.position = pos_pre;
 	return out;

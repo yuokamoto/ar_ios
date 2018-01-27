@@ -43,6 +43,16 @@
 @property (strong, nonatomic) IBOutlet UILabel *amblight_intens;
 @property (strong, nonatomic) IBOutlet UISlider *amblight_intens_slider;
 
+@property (strong, nonatomic) IBOutlet UILabel *blur_title;
+@property (strong, nonatomic) IBOutlet UILabel *blur_mb;
+@property (strong, nonatomic) IBOutlet UISlider *blur_mb_slider;
+@property (strong, nonatomic) IBOutlet UILabel *blur_gbc;
+@property (strong, nonatomic) IBOutlet UISlider *blur_gbc_slider;
+@property (strong, nonatomic) IBOutlet UILabel *blur_gbk;
+@property (strong, nonatomic) IBOutlet UISlider *blur_gbk_slider;
+@property (strong, nonatomic) IBOutlet UISwitch *mode_sw;
+
+
 @end
 
     
@@ -59,13 +69,31 @@ float ball_radius = 0.0365;//0.2;
 float offline_move_radius = 0.1;
 float offline_move_freq = 0.3;
 bool isVisible = false;
+bool online = false;
 
 SCNScene *scene;
 SCNMatrix4 plane_matrix;
 SCNMatrix4 m_head_pre;
 SCNMatrix4 m_ball_pre;
-//SCNProgram *program;
-//SCNProgram *program1;
+
+//blur variables
+float mb = 1.0; //strength of motion blur
+// gaussian blur
+// gbk*(depth-gbc)
+float gbc = 0.30; //zero point of gausiaan blur
+float gbk = 0.01; //coeff of gausiaan blur
+
+//struct for velocity calculation metal shader
+typedef struct{
+	matrix_float4x4 m;
+	float k;
+} mb_uniforms;
+
+//struct for gaus blur calculation metal shader
+typedef struct{
+	float gbc;
+	float gbk;
+} gb_uniforms;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -80,21 +108,21 @@ SCNMatrix4 m_ball_pre;
 	scene = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
 	SCNScene *scene_head_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
 	[scene.rootNode addChildNode:scene_head_vel.rootNode.childNodes[0]];
-//	SCNScene *scene_head_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
-//	[scene.rootNode addChildNode:scene_head_dis.rootNode.childNodes[0]];
+	SCNScene *scene_head_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
+	[scene.rootNode addChildNode:scene_head_dis.rootNode.childNodes[0]];
 	SCNScene *scene_ball = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
 	[scene.rootNode addChildNode:scene_ball.rootNode.childNodes[0]];
 	SCNScene *scene_ball_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
 	[scene.rootNode addChildNode:scene_ball_vel.rootNode.childNodes[0]];
-//	SCNScene *scene_ball_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
-//	[scene.rootNode addChildNode:scene_ball_dis.rootNode.childNodes[0]];
+	SCNScene *scene_ball_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
+	[scene.rootNode addChildNode:scene_ball_dis.rootNode.childNodes[0]];
 
 	scene.rootNode.childNodes[0].name = @"head";
 	scene.rootNode.childNodes[1].name = @"head_vel";
-//	scene.rootNode.childNodes[2].name = @"head_dis";
-	scene.rootNode.childNodes[2].name = @"ball";
-	scene.rootNode.childNodes[3].name = @"ball_vel";
-//	scene.rootNode.childNodes[5].name = @"ball_dis";
+	scene.rootNode.childNodes[2].name = @"head_dis";
+	scene.rootNode.childNodes[3].name = @"ball";
+	scene.rootNode.childNodes[4].name = @"ball_vel";
+	scene.rootNode.childNodes[5].name = @"ball_dis";
 //	NSLog(@"%@",(NSString *)scene.rootNode.childNodes);
 	
 	SCNProgram *program = [SCNProgram alloc];
@@ -107,15 +135,15 @@ SCNMatrix4 m_ball_pre;
 	ball_vel_node.geometry.materials[1].program = program; //must
 	ball_vel_node.geometry.materials[0].program = program;
 	
-//	SCNProgram *program_dis = [SCNProgram alloc];
-//	program_dis.vertexFunctionName = @"distance_vertex";
-//	program_dis.fragmentFunctionName = @"distance_fragment";
-//	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
-//	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
-//	head_dis_node.geometry.materials[1].program = program_dis; //must
-//	head_dis_node.geometry.materials[0].program = program_dis;
-//	ball_dis_node.geometry.materials[1].program = program_dis; //must
-//	ball_dis_node.geometry.materials[0].program = program_dis;
+	SCNProgram *program_dis = [SCNProgram alloc];
+	program_dis.vertexFunctionName = @"distance_vertex";
+	program_dis.fragmentFunctionName = @"distance_fragment";
+	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
+	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
+	head_dis_node.geometry.materials[1].program = program_dis; //must
+	head_dis_node.geometry.materials[0].program = program_dis;
+	ball_dis_node.geometry.materials[1].program = program_dis; //must
+	ball_dis_node.geometry.materials[0].program = program_dis;
 
 	// Set the scene to the view
     self.sceneView.scene = scene;
@@ -188,12 +216,12 @@ SCNMatrix4 m_ball_pre;
 	spotLightNode.name = @"spotlight";
 	spotLightNode.light = [SCNLight light];
 	spotLightNode.light.type = SCNLightTypeSpot;
-	spotLightNode.light.spotInnerAngle = 45;
-	spotLightNode.light.spotOuterAngle = 45;
+	spotLightNode.light.spotInnerAngle = 180;
+	spotLightNode.light.spotOuterAngle = 180;
 	//	spotLightNode.light.color = [UIColor colorWithWhite:1.0 alpha:0.5];
 	spotLightNode.light.shadowMode = SCNShadowModeDeferred;
 	spotLightNode.light.castsShadow = YES;
-	spotLightNode.light.shadowBias = 1000;
+	spotLightNode.light.shadowBias = 10000;
 	spotLightNode.light.shadowRadius = 10;
 	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:0.8];
 	spotLightNode.light.shadowMapSize = CGSizeMake(4000, 4000);
@@ -409,6 +437,15 @@ SCNMatrix4 m_ball_pre;
 		[_amblight_title setHidden:visible];
 		[_amblight_intens setHidden:visible];
 		[_amblight_intens_slider setHidden:visible];
+		[_blur_title setHidden:visible];
+		[_blur_mb setHidden:visible];
+		[_blur_mb_slider setHidden:visible];
+		[_blur_gbc setHidden:visible];
+		[_blur_gbc_slider setHidden:visible];
+		[_blur_gbk setHidden:visible];
+		[_blur_gbk_slider setHidden:visible];
+		[_mode_sw setHidden:visible];
+
 	}
 }
 
@@ -429,7 +466,7 @@ SCNMatrix4 m_ball_pre;
 		//		_sceneView.scene.rootNode.simdTransform = anchor.transform;
 		//		(ARPlaneAnchor *)anchor.position.x = 0;
 //		[self drawplane:(ARPlaneAnchor *)anchor];
-		[self drawplanewithWidth:((ARPlaneAnchor *)anchor).extent.x height:((ARPlaneAnchor *)anchor).extent.z trans:&plane_matrix];
+		[self drawplanewithWidth:((ARPlaneAnchor *)anchor).extent.x*10.0 height:((ARPlaneAnchor *)anchor).extent.z*10.0 trans:&plane_matrix];
 		[self insertSpotLight:SCNVector3Make(0,2,0)];
 		isVisible = true;
 	}
@@ -441,15 +478,15 @@ SCNMatrix4 m_ball_pre;
 	SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
 	SCNNode *ball_vel_node = [scene.rootNode childNodeWithName:@"ball_vel" recursively:YES];
 	SCNNode *head_vel_node = [scene.rootNode childNodeWithName:@"head_vel" recursively:YES];
-//	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
-//	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
+	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
+	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
 
 //	CIFilter *blur = [CIFilter filterWithName:@"CIGaussianBlur" keysAndValues:@"inputRadius", @1.0f, nil];
 //	NSArray *filter = [NSArray arrayWithObjects:blur];
 //	[ball_node setFilters:filter];
 	
-	bool OFFLINE = true;//false;//
-	if(OFFLINE){
+//	bool OFFLINE = true;//false;//
+	if(!online){
 		//ball matrix
 		float zpos = offline_move_radius * sin(2*3.14*offline_move_freq*time);
 		
@@ -508,25 +545,45 @@ SCNMatrix4 m_ball_pre;
 	if(SCNMatrix4IsIdentity(m_head_pre)){
 		m_head_pre = m_head;
 	}
-	NSValue *uniformdata_head = [NSValue valueWithSCNMatrix4:m_head_pre];
-	[head_vel_node.geometry.materials[0] setValue:uniformdata_head forKey:@"vmvp"];
-	[head_vel_node.geometry.materials[1] setValue:uniformdata_head forKey:@"vmvp"];
-	
+//	NSValue *uniformdata_head = [NSValue valueWithSCNMatrix4:m_head_pre];
+//	[head_vel_node.geometry.materials[0] setValue:uniformdata_head forKey:@"vmvp"];
+//	[head_vel_node.geometry.materials[1] setValue:uniformdata_head forKey:@"vmvp"];
+	mb_uniforms uniform_head;
+	uniform_head.m = SCNMatrix4ToMat4(m_head_pre);
+	uniform_head.k = mb;
+	NSData *uniformdata_head = [NSData dataWithBytes:&uniform_head length:sizeof(mb_uniforms)];
+	[head_vel_node.geometry.materials[0] setValue:uniformdata_head forKey:@"uniform"];
+	[head_vel_node.geometry.materials[1] setValue:uniformdata_head forKey:@"uniform"];
+
 	m_head_pre = m_head;
 	
 	SCNMatrix4 m_ball =  ball_node.transform;
 	if(SCNMatrix4IsIdentity(m_ball_pre)){
 		m_ball_pre = m_ball;
 	}
-	NSValue *uniformdata_ball = [NSValue valueWithSCNMatrix4:m_ball_pre];
-	[ball_vel_node.geometry.materials[0] setValue:uniformdata_ball forKey:@"vmvp"];
-	[ball_vel_node.geometry.materials[1] setValue:uniformdata_ball forKey:@"vmvp"];
+//	NSValue *uniformdata_ball = [NSValue valueWithSCNMatrix4:m_ball_pre];
+//	[ball_vel_node.geometry.materials[0] setValue:uniformdata_ball forKey:@"vmvp"];
+//	[ball_vel_node.geometry.materials[1] setValue:uniformdata_ball forKey:@"vmvp"];
+	mb_uniforms uniform_ball;
+	uniform_ball.m = SCNMatrix4ToMat4(m_ball_pre);
+	uniform_ball.k = mb;
+	NSData *uniformdata_ball = [NSData dataWithBytes:&uniform_ball length:sizeof(mb_uniforms)];
+	[ball_vel_node.geometry.materials[0] setValue:uniformdata_ball forKey:@"uniform"];
+	[ball_vel_node.geometry.materials[1] setValue:uniformdata_ball forKey:@"uniform"];
 
 	m_ball_pre = m_ball;
 	
 	//node for distance from camera
-//	ball_dis_node.transform = ball_vel_node.transform;
-//	head_dis_node.transform = head_vel_node.transform;
+	ball_dis_node.transform = ball_vel_node.transform;
+	head_dis_node.transform = head_vel_node.transform;
+	gb_uniforms uniform_gb;
+	uniform_gb.gbc = gbc;
+	uniform_gb.gbk = gbk;
+	NSData *uniformdata_gb = [NSData dataWithBytes:&uniform_gb length:sizeof(gb_uniforms)];
+	[head_dis_node.geometry.materials[0] setValue:uniformdata_gb forKey:@"uniform"];
+	[head_dis_node.geometry.materials[1] setValue:uniformdata_gb forKey:@"uniform"];
+	[ball_dis_node.geometry.materials[0] setValue:uniformdata_gb forKey:@"uniform"];
+	[ball_dis_node.geometry.materials[1] setValue:uniformdata_gb forKey:@"uniform"];
 
 	//	ARLightEstimate *estimate = _sceneView.session.currentFrame.lightEstimate;
 //	if (!estimate) {
@@ -640,4 +697,22 @@ SCNMatrix4 m_ball_pre;
 - (IBAction)amblight_intens_change:(id)sender {
 	[self amblight_param_change];
 }
+- (void)blur_param_change{
+	mb = _blur_mb_slider.value;
+	gbc = _blur_gbc_slider.value;
+	gbk = _blur_gbk_slider.value;
+}
+- (IBAction)blur_mb_change:(id)sender {
+	[self blur_param_change];
+}
+- (IBAction)blur_gbc_change:(id)sender {
+	[self blur_param_change];
+}
+- (IBAction)blur_gbk_change:(id)sender {
+	[self blur_param_change];
+}
+- (IBAction)mode_sw_change:(id)sender {
+	online = _mode_sw.on;
+}
+
 @end
