@@ -10,6 +10,7 @@
 #import <SceneKit/SceneKit.h>
 #import <ARKit/ARKit.h>
 #import <RobotKit/RobotKit.h>
+#import "Filter.h"
 
 @interface ViewController : UIViewController
 

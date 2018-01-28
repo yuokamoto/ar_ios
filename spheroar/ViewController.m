@@ -70,6 +70,7 @@ float offline_move_radius = 0.1;
 float offline_move_freq = 0.3;
 bool isVisible = false;
 bool online = false;
+bool finish = false;
 
 SCNScene *scene;
 SCNMatrix4 plane_matrix;
@@ -77,11 +78,11 @@ SCNMatrix4 m_head_pre;
 SCNMatrix4 m_ball_pre;
 
 //blur variables
-float mb = 1.0; //strength of motion blur
+float mb = 0.15; //strength of motion blur
 // gaussian blur
 // gbk*(depth-gbc)
 float gbc = 0.30; //zero point of gausiaan blur
-float gbk = 0.01; //coeff of gausiaan blur
+float gbk = 0.0025; //coeff of gausiaan blur
 
 //struct for velocity calculation metal shader
 typedef struct{
@@ -94,6 +95,11 @@ typedef struct{
 	float gbc;
 	float gbk;
 } gb_uniforms;
+
+const float f_cutoff_pos = 1.0;//hz
+const float f_cutoff_ori = 1.0;//hz
+FirstOrderSystem *fil_pos[2];
+FirstOrderSystem *fil_ori[4];
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -162,7 +168,7 @@ typedef struct{
 	ambientLightNode.name = @"amblight";
 	ambientLightNode.light.type = SCNLightTypeAmbient;
 	ambientLightNode.light.color = [UIColor whiteColor];
-	ambientLightNode.light.intensity = 100.0;
+	ambientLightNode.light.intensity = _amblight_intens_slider.value;
 	[scene.rootNode addChildNode:ambientLightNode];
 	
 	//sphero
@@ -176,6 +182,17 @@ typedef struct{
 											 selector:@selector(appDidBecomeActive:)
 												 name:UIApplicationDidBecomeActiveNotification
 											   object:nil];
+	
+	//lowpass filters for sphero data
+	for(unsigned int i=0; i<2; i++){
+		fil_pos[i] = [[FirstOrderSystem alloc] init];
+		[fil_pos[i] setFreq:f_cutoff_pos];
+	}
+	for(unsigned int i=0; i<4; i++){
+		fil_ori[i] = [[FirstOrderSystem alloc] init];
+		[fil_ori[i] setFreq:f_cutoff_ori];
+	}
+	
 	// add a tap gesture recognizer
 	UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
 	NSMutableArray *gestureRecognizers = [NSMutableArray array];
@@ -195,6 +212,11 @@ typedef struct{
 	SCNTechnique *technique = [SCNTechnique techniqueWithDictionary:dictionary];
 	
 	_sceneView.technique = technique;
+	
+	//initialize params with ui init value
+	mb = _blur_mb_slider.value;
+	gbc = _blur_gbc_slider.value;
+	gbk = _blur_gbk_slider.value;
 
 }
 
@@ -218,14 +240,14 @@ typedef struct{
 	spotLightNode.light.type = SCNLightTypeSpot;
 	spotLightNode.light.spotInnerAngle = 180;
 	spotLightNode.light.spotOuterAngle = 180;
-	//	spotLightNode.light.color = [UIColor colorWithWhite:1.0 alpha:0.5];
 	spotLightNode.light.shadowMode = SCNShadowModeDeferred;
 	spotLightNode.light.castsShadow = YES;
 	spotLightNode.light.shadowBias = 10000;
-	spotLightNode.light.shadowRadius = 10;
-	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:0.8];
+	spotLightNode.light.shadowRadius = 30;//(int)_splight_shadow_radius_slider.value;
+//	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
+	spotLightNode.light.color = [UIColor colorWithWhite:0.0 alpha:0.8];
 	spotLightNode.light.shadowMapSize = CGSizeMake(4000, 4000);
-	spotLightNode.light.shadowSampleCount = 1;
+	spotLightNode.light.shadowSampleCount = 2;//(int)_splight_shadow_count_slider.value;
 	spotLightNode.position = position;
 	
 	// By default the stop light points directly down the negative
@@ -233,7 +255,11 @@ typedef struct{
 	// x-axis to point it down
 	
 	spotLightNode.eulerAngles = SCNVector3Make(-M_PI / 2, 0, 0);
+//	spotLightNode.eulerAngles = SCNVector3Make(_splight_pos_ex_slider.value, _splight_pos_ey_slider.value, _splight_pos_ez_slider.value );
 	[_sceneView.scene.rootNode addChildNode: spotLightNode];
+}
+- (void)insertSpotLightUIpos {
+	[self insertSpotLight:SCNVector3Make(_splight_pos_x_slider.value, _splight_pos_y_slider.value, _splight_pos_z_slider.value)];
 }
 - (void)drawplanewithWidth:(float)w height:(float)h trans:(SCNMatrix4 *)mat {
 	SCNPlane *geometry = [SCNPlane planeWithWidth:w height:h];
@@ -379,29 +405,59 @@ typedef struct{
 	
 	// check that we clicked on at least one object
 	if([hitResults count] > 0){
-		// retrieved the first clicked object
-		SCNHitTestResult *result = [hitResults objectAtIndex:0];
-		
-		// get its material
-		SCNMaterial *material = result.node.geometry.firstMaterial;
-		
-		// highlight it
-		[SCNTransaction begin];
-		[SCNTransaction setAnimationDuration:0.5];
-		
-		// on completion - unhighlight
-		[SCNTransaction setCompletionBlock:^{
+		SCNNode *ball_node = [scene.rootNode childNodeWithName:@"ball" recursively:YES];
+		SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
+		if(!finish){
+			_sceneView.technique = nil;
+			// retrieved the first clicked object
+	//		SCNHitTestResult *result = [hitResults objectAtIndex:0];
+			
+			// highlight it
 			[SCNTransaction begin];
-			[SCNTransaction setAnimationDuration:0.5];
+			[SCNTransaction setAnimationDuration:5.0];
 			
-			material.emission.contents = [UIColor blackColor];
+			// on completion - unhighlight
+	//		[SCNTransaction setCompletionBlock:^{
+	//			[SCNTransaction begin];
+	//			[SCNTransaction setAnimationDuration:5.0];
+	//
+	////			material.emission.contents = [UIColor blackColor];
+	//			[SCNTransaction commit];
+	////			result.node.geometry.materials[0].transparency = 0.0;
+	////			result.node.geometry.materials[1].transparency = 0.0;
+	//			head_node.geometry.materials[0].transparency = 1.0;
+	//			head_node.geometry.materials[1].transparency = 1.0;
+	//			ball_node.geometry.materials[0].transparency = 1.0;
+	//			ball_node.geometry.materials[1].transparency = 1.0;
+	//		}];
 			
+	//		material.emission.contents = [UIColor redColor];
+	//		material.transparency = 1.0;
+	//		result.node.geometry.materials[0].transparency = 0.0;
+	//		result.node.geometry.materials[1].transparency = 0.0;
+			head_node.geometry.materials[0].transparency = 0.0;
+			head_node.geometry.materials[1].transparency = 0.0;
+			ball_node.geometry.materials[0].transparency = 0.0;
+			ball_node.geometry.materials[1].transparency = 0.0;
 			[SCNTransaction commit];
-		}];
-		
-		material.emission.contents = [UIColor redColor];
-		
-		[SCNTransaction commit];
+		}else{
+			
+			head_node.geometry.materials[0].transparency = 1.0;
+			head_node.geometry.materials[1].transparency = 1.0;
+			ball_node.geometry.materials[0].transparency = 1.0;
+			ball_node.geometry.materials[1].transparency = 1.0;
+			
+			NSURL *url;
+			url = [[NSBundle mainBundle] URLForResource:@"motion_blur" withExtension:@"plist"];
+			NSDictionary *dictionary = [NSDictionary dictionaryWithContentsOfURL:url];
+			//		for (id key in [dictionary keyEnumerator]) {
+			//			NSLog(@"Key:%@ Value:%@", key, [dictionary valueForKey:key]);
+			//		}
+			SCNTechnique *technique = [SCNTechnique techniqueWithDictionary:dictionary];
+			
+			_sceneView.technique = technique;
+		}
+		finish = !finish;
 	}
 }
 - (void) handleLongPress:(UIGestureRecognizer*)gestureRecognize
@@ -467,7 +523,8 @@ typedef struct{
 		//		(ARPlaneAnchor *)anchor.position.x = 0;
 //		[self drawplane:(ARPlaneAnchor *)anchor];
 		[self drawplanewithWidth:((ARPlaneAnchor *)anchor).extent.x*10.0 height:((ARPlaneAnchor *)anchor).extent.z*10.0 trans:&plane_matrix];
-		[self insertSpotLight:SCNVector3Make(0,2,0)];
+		
+		[self insertSpotLight:SCNVector3Make(0, 2, 0)];
 		isVisible = true;
 	}
 	
@@ -481,10 +538,11 @@ typedef struct{
 	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
 	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
 
+//	ball_node.geometry.
 //	CIFilter *blur = [CIFilter filterWithName:@"CIGaussianBlur" keysAndValues:@"inputRadius", @1.0f, nil];
 //	NSArray *filter = [NSArray arrayWithObjects:blur];
 //	[ball_node setFilters:filter];
-	
+//	NSLog(@"%f",time);
 //	bool OFFLINE = true;//false;//
 	if(!online){
 		//ball matrix
@@ -511,19 +569,41 @@ typedef struct{
 
 	}else{
 		//        double deg2rad = 3.141592/180.0;
-		double px = locData.position.x*0.01;
-		double py = locData.position.y*0.01;
+		double p[2] = {
+			locData.position.x*0.01,
+			locData.position.y*0.01}
+		;
+		double q[4] = {
+			quaternionData.quaternions.q0,
+			quaternionData.quaternions.q1,
+			quaternionData.quaternions.q2,
+			quaternionData.quaternions.q3
+		};
+		
+		//filtering_data
+		float t_now = time;//*0.001f;
+		for(unsigned int i=0; i<2; i++){
+//			float p_p = p[i];
+			p[i] = [fil_pos[i] updateWithInput:p[i] t:t_now];
+//			NSLog(@"pos %d: %f,%f\n",i,p_p,p[i]);
+		}
+		for(unsigned int i=0; i<4; i++){
+//			float q_p = q[i];
+			q[i] = [fil_ori[i] updateWithInput:q[i] t:t_now];
+//			NSLog(@"ori %d: %f,%f\n",i,q_p,q[i]);
+		}
+		
 		SCNMatrix4 headMat = SCNMatrix4MakeTranslation(0.0, ball_radius, 0.0);
-		headMat = SCNMatrix4Rotate(headMat, 2.0*acos(quaternionData.quaternions.q0),
-								   -quaternionData.quaternions.q1,
-								   -quaternionData.quaternions.q3,
-								   quaternionData.quaternions.q2);
-		headMat = SCNMatrix4Translate(headMat,-px, ball_radius, py);
+		headMat = SCNMatrix4Rotate(headMat, 2.0*acos(q[0]),
+								   -q[1],
+								   -q[3],
+								   q[2]);
+		headMat = SCNMatrix4Translate(headMat,-p[0], ball_radius, p[1]);
 		head_node.transform = SCNMatrix4Mult(headMat, plane_matrix);
 		
-		SCNMatrix4 ballMat = SCNMatrix4MakeRotation(py/ball_radius, 1.0, 0.0, 0.0);
-		ballMat = SCNMatrix4Rotate(ballMat, px/ball_radius, 0.0, 0.0, 1.0);
-		ballMat = SCNMatrix4Translate(ballMat,-px, ball_radius, py);
+		SCNMatrix4 ballMat = SCNMatrix4MakeRotation(p[1]/ball_radius, 1.0, 0.0, 0.0);
+		ballMat = SCNMatrix4Rotate(ballMat, p[0]/ball_radius, 0.0, 0.0, 1.0);
+		ballMat = SCNMatrix4Translate(ballMat,-p[0], ball_radius, p[1]);
 		ball_node.transform = SCNMatrix4Mult(ballMat, plane_matrix);
 		//        ball_node.eulerAngles = SCNVector3Make(-attitudeData.pitch*deg2rad, attitudeData.yaw*deg2rad, attitudeData.roll*deg2rad);
 		
@@ -584,7 +664,13 @@ typedef struct{
 	[head_dis_node.geometry.materials[1] setValue:uniformdata_gb forKey:@"uniform"];
 	[ball_dis_node.geometry.materials[0] setValue:uniformdata_gb forKey:@"uniform"];
 	[ball_dis_node.geometry.materials[1] setValue:uniformdata_gb forKey:@"uniform"];
-
+	
+	if(finish){
+		head_vel_node.scale = SCNVector3Make(0,0,0);
+		head_dis_node.scale = SCNVector3Make(0,0,0);
+		ball_vel_node.scale = SCNVector3Make(0,0,0);
+		ball_dis_node.scale = SCNVector3Make(0,0,0);
+	}
 	//	ARLightEstimate *estimate = _sceneView.session.currentFrame.lightEstimate;
 //	if (!estimate) {
 //		return;

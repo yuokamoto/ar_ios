@@ -165,9 +165,13 @@ vertex dis_vertex_t distance_vertex(custom_vertex_t in [[stage_in]],
 
 fragment float4 distance_fragment(dis_vertex_t vert [[stage_in]])
 {
-	float z = 0.0;
-	if(vert.mv_position.z!=0){
-		z = fabs(vert.mv_position.z+vert.gbc)*vert.gbk;//fabs(vert.mv_position.z)*0.01;
+	float z = fabs(vert.mv_position.z);
+
+	if(z>0){
+		if(z>=1.0){
+			z=1.0;
+		}
+		z = (z-vert.gbc)*vert.gbk;//fabs(vert.mv_position.z)*0.01;
 	}
 	return float4(0.0, 0, z, 1.0);
 }

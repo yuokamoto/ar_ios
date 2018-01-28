@@ -17,6 +17,7 @@
 		D837A4DF1FCC4574002C2C13 /* spheroarTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D837A4DE1FCC4574002C2C13 /* spheroarTests.m */; };
 		D837A4EA1FCC4574002C2C13 /* spheroarUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = D837A4E91FCC4574002C2C13 /* spheroarUITests.m */; };
 		D837A4F81FCC464A002C2C13 /* RobotKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D837A4F71FCC464A002C2C13 /* RobotKit.framework */; };
+		D83B12FF201CB5A500AAECAB /* FIlter.m in Sources */ = {isa = PBXBuildFile; fileRef = D83B12FE201CB5A500AAECAB /* FIlter.m */; };
 		D8C6E4F02000F41700DDB6BC /* motion_blur.metal in Sources */ = {isa = PBXBuildFile; fileRef = D8C6E4EE2000F41600DDB6BC /* motion_blur.metal */; };
 		D8C6E4F12000F41700DDB6BC /* motion_blur.plist in Resources */ = {isa = PBXBuildFile; fileRef = D8C6E4EF2000F41700DDB6BC /* motion_blur.plist */; };
 /* End PBXBuildFile section */
@@ -57,6 +58,8 @@
 		D837A4E91FCC4574002C2C13 /* spheroarUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = spheroarUITests.m; sourceTree = "<group>"; };
 		D837A4EB1FCC4574002C2C13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D837A4F71FCC464A002C2C13 /* RobotKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = RobotKit.framework; sourceTree = "<group>"; };
+		D83B12FE201CB5A500AAECAB /* FIlter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FIlter.m; sourceTree = "<group>"; };
+		D83B1300201CB5FF00AAECAB /* Filter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Filter.h; sourceTree = "<group>"; };
 		D8C6E4EE2000F41600DDB6BC /* motion_blur.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = motion_blur.metal; sourceTree = "<group>"; };
 		D8C6E4EF2000F41700DDB6BC /* motion_blur.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = motion_blur.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -116,6 +119,8 @@
 				D837A4C61FCC4573002C2C13 /* art.scnassets */,
 				D837A4C81FCC4573002C2C13 /* ViewController.h */,
 				D837A4C91FCC4573002C2C13 /* ViewController.m */,
+				D83B1300201CB5FF00AAECAB /* Filter.h */,
+				D83B12FE201CB5A500AAECAB /* FIlter.m */,
 				D837A4CB1FCC4573002C2C13 /* Main.storyboard */,
 				D837A4CE1FCC4573002C2C13 /* Assets.xcassets */,
 				D837A4D01FCC4573002C2C13 /* LaunchScreen.storyboard */,
@@ -289,6 +294,7 @@
 				D837A4D51FCC4573002C2C13 /* main.m in Sources */,
 				D837A4C51FCC4573002C2C13 /* AppDelegate.m in Sources */,
 				D8C6E4F02000F41700DDB6BC /* motion_blur.metal in Sources */,
+				D83B12FF201CB5A500AAECAB /* FIlter.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
