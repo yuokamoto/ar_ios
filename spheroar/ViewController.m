@@ -245,7 +245,7 @@ FirstOrderSystem *fil_ori[4];
 	spotLightNode.light.shadowBias = 10000;
 	spotLightNode.light.shadowRadius = 30;//(int)_splight_shadow_radius_slider.value;
 //	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
-	spotLightNode.light.color = [UIColor colorWithWhite:0.0 alpha:0.8];
+//	spotLightNode.light.color = [UIColor colorWithWhite:0.0 alpha:0.8];
 //	spotLightNode.light.intensity = 0;
 	spotLightNode.light.shadowMapSize = CGSizeMake(4000, 4000);
 	spotLightNode.light.shadowSampleCount = 2;//(int)_splight_shadow_count_slider.value;
