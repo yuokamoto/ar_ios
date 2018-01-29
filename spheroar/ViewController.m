@@ -246,6 +246,7 @@ FirstOrderSystem *fil_ori[4];
 	spotLightNode.light.shadowRadius = 30;//(int)_splight_shadow_radius_slider.value;
 //	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
 	spotLightNode.light.color = [UIColor colorWithWhite:0.0 alpha:0.8];
+//	spotLightNode.light.intensity = 0;
 	spotLightNode.light.shadowMapSize = CGSizeMake(4000, 4000);
 	spotLightNode.light.shadowSampleCount = 2;//(int)_splight_shadow_count_slider.value;
 	spotLightNode.position = position;
@@ -270,6 +271,7 @@ FirstOrderSystem *fil_ori[4];
 	geometry.firstMaterial = material;
 	
 	SCNNode *plane_node = [SCNNode nodeWithGeometry:geometry];
+	plane_node.name = @"plane";
 	plane_node.physicsBody = SCNPhysicsBody.staticBody;
 	//	plane_node.position = SCNVector3Make(anchor.center.x,0,anchor.center.z);
 	//	plane_node.transform = SCNMatrix4FromMat4(anchor.transform);
@@ -405,59 +407,62 @@ FirstOrderSystem *fil_ori[4];
 	
 	// check that we clicked on at least one object
 	if([hitResults count] > 0){
-		SCNNode *ball_node = [scene.rootNode childNodeWithName:@"ball" recursively:YES];
-		SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
-		if(!finish){
-			_sceneView.technique = nil;
-			// retrieved the first clicked object
-	//		SCNHitTestResult *result = [hitResults objectAtIndex:0];
-			
-			// highlight it
-			[SCNTransaction begin];
-			[SCNTransaction setAnimationDuration:5.0];
-			
-			// on completion - unhighlight
-	//		[SCNTransaction setCompletionBlock:^{
-	//			[SCNTransaction begin];
-	//			[SCNTransaction setAnimationDuration:5.0];
-	//
-	////			material.emission.contents = [UIColor blackColor];
-	//			[SCNTransaction commit];
-	////			result.node.geometry.materials[0].transparency = 0.0;
-	////			result.node.geometry.materials[1].transparency = 0.0;
-	//			head_node.geometry.materials[0].transparency = 1.0;
-	//			head_node.geometry.materials[1].transparency = 1.0;
-	//			ball_node.geometry.materials[0].transparency = 1.0;
-	//			ball_node.geometry.materials[1].transparency = 1.0;
-	//		}];
-			
-	//		material.emission.contents = [UIColor redColor];
-	//		material.transparency = 1.0;
-	//		result.node.geometry.materials[0].transparency = 0.0;
-	//		result.node.geometry.materials[1].transparency = 0.0;
-			head_node.geometry.materials[0].transparency = 0.0;
-			head_node.geometry.materials[1].transparency = 0.0;
-			ball_node.geometry.materials[0].transparency = 0.0;
-			ball_node.geometry.materials[1].transparency = 0.0;
-			[SCNTransaction commit];
-		}else{
-			
-			head_node.geometry.materials[0].transparency = 1.0;
-			head_node.geometry.materials[1].transparency = 1.0;
-			ball_node.geometry.materials[0].transparency = 1.0;
-			ball_node.geometry.materials[1].transparency = 1.0;
-			
-			NSURL *url;
-			url = [[NSBundle mainBundle] URLForResource:@"motion_blur" withExtension:@"plist"];
-			NSDictionary *dictionary = [NSDictionary dictionaryWithContentsOfURL:url];
-			//		for (id key in [dictionary keyEnumerator]) {
-			//			NSLog(@"Key:%@ Value:%@", key, [dictionary valueForKey:key]);
-			//		}
-			SCNTechnique *technique = [SCNTechnique techniqueWithDictionary:dictionary];
-			
-			_sceneView.technique = technique;
+		SCNHitTestResult *result = [hitResults objectAtIndex:0];
+		if(![result.node.name isEqualToString:@"plane"]){
+			SCNNode *ball_node = [scene.rootNode childNodeWithName:@"ball" recursively:YES];
+			SCNNode *head_node = [scene.rootNode childNodeWithName:@"head" recursively:YES];
+			if(!finish){
+				_sceneView.technique = nil;
+				// retrieved the first clicked object
+		//		SCNHitTestResult *result = [hitResults objectAtIndex:0];
+				
+				// highlight it
+				[SCNTransaction begin];
+				[SCNTransaction setAnimationDuration:5.0];
+				
+				// on completion - unhighlight
+		//		[SCNTransaction setCompletionBlock:^{
+		//			[SCNTransaction begin];
+		//			[SCNTransaction setAnimationDuration:5.0];
+		//
+		////			material.emission.contents = [UIColor blackColor];
+		//			[SCNTransaction commit];
+		////			result.node.geometry.materials[0].transparency = 0.0;
+		////			result.node.geometry.materials[1].transparency = 0.0;
+		//			head_node.geometry.materials[0].transparency = 1.0;
+		//			head_node.geometry.materials[1].transparency = 1.0;
+		//			ball_node.geometry.materials[0].transparency = 1.0;
+		//			ball_node.geometry.materials[1].transparency = 1.0;
+		//		}];
+				
+		//		material.emission.contents = [UIColor redColor];
+		//		material.transparency = 1.0;
+		//		result.node.geometry.materials[0].transparency = 0.0;
+		//		result.node.geometry.materials[1].transparency = 0.0;
+				head_node.geometry.materials[0].transparency = 0.0;
+				head_node.geometry.materials[1].transparency = 0.0;
+				ball_node.geometry.materials[0].transparency = 0.0;
+				ball_node.geometry.materials[1].transparency = 0.0;
+				[SCNTransaction commit];
+			}else{
+				
+				head_node.geometry.materials[0].transparency = 1.0;
+				head_node.geometry.materials[1].transparency = 1.0;
+				ball_node.geometry.materials[0].transparency = 1.0;
+				ball_node.geometry.materials[1].transparency = 1.0;
+				
+				NSURL *url;
+				url = [[NSBundle mainBundle] URLForResource:@"motion_blur" withExtension:@"plist"];
+				NSDictionary *dictionary = [NSDictionary dictionaryWithContentsOfURL:url];
+				//		for (id key in [dictionary keyEnumerator]) {
+				//			NSLog(@"Key:%@ Value:%@", key, [dictionary valueForKey:key]);
+				//		}
+				SCNTechnique *technique = [SCNTechnique techniqueWithDictionary:dictionary];
+				
+				_sceneView.technique = technique;
+			}
+			finish = !finish;
 		}
-		finish = !finish;
 	}
 }
 - (void) handleLongPress:(UIGestureRecognizer*)gestureRecognize
