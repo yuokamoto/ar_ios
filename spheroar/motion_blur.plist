@@ -49,7 +49,7 @@
 			<key>inputs</key>
 			<dict>
 				<key>colorSampler</key>
-				<string>gaus_blur_scene</string>
+				<string>blur_scene</string>
 				<key>headVelSampler</key>
 				<string>head_vel_scene</string>
 				<key>ballVelSampler</key>
@@ -109,7 +109,7 @@
 			<key>node</key>
 			<string>ball_dis</string>
 		</dict>
-		<key>gaus_blur</key>
+		<key>blur</key>
 		<dict>
 			<key>draw</key>
 			<string>DRAW_QUAD</string>
@@ -118,7 +118,8 @@
 			<key>metalVertexShader</key>
 			<string>blur_vertex</string>
 			<key>metalFragmentShader</key>
-			<string>blur_flagment</string>
+<!--			<string>gaus_blur_flagment</string>-->
+			<string>mean_blur_flagment</string>
 			<key>inputs</key>
 			<dict>
 				<key>colorSampler</key>
@@ -131,7 +132,7 @@
 			<key>outputs</key>
 			<dict>
 				<key>color</key>
-				<string>gaus_blur_scene</string>
+				<string>blur_scene</string>
 			</dict>
 		</dict>
 	</dict>
@@ -139,7 +140,7 @@
 	<array>
 		<string>head_dis</string>
 		<string>ball_dis</string>
-		<string>gaus_blur</string>
+		<string>blur</string>
 		<string>head_vel</string>
 		<string>ball_vel</string>
 		<string>motion_blur</string>
@@ -173,7 +174,7 @@
 			<key>type</key>
 			<string>color</string>
 		</dict>
-		<key>gaus_blur_scene</key>
+		<key>blur_scene</key>
 		<dict>
 			<key>type</key>
 			<string>color</string>

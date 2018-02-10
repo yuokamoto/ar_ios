@@ -71,6 +71,14 @@ float offline_move_freq = 0.3;
 bool isVisible = false;
 bool online = false;
 bool finish = false;
+bool isTouching = false;
+//NSDate *touch_began_time;
+
+typedef struct{
+	float vel;
+	float heading;
+} sphero_ref;
+sphero_ref ref;
 
 SCNScene *scene;
 SCNMatrix4 plane_matrix;
@@ -82,7 +90,7 @@ float mb = 0.15; //strength of motion blur
 // gaussian blur
 // gbk*(depth-gbc)
 float gbc = 0.30; //zero point of gausiaan blur
-float gbk = 0.0025; //coeff of gausiaan blur
+float gbk = 0.0018; //coeff of gausiaan blur
 
 //struct for velocity calculation metal shader
 typedef struct{
@@ -182,6 +190,8 @@ FirstOrderSystem *fil_ori[4];
 											 selector:@selector(appDidBecomeActive:)
 												 name:UIApplicationDidBecomeActiveNotification
 											   object:nil];
+	ref.heading = 0.0;
+	ref.vel = 0.0;
 	
 	//lowpass filters for sphero data
 	for(unsigned int i=0; i<2; i++){
@@ -195,10 +205,14 @@ FirstOrderSystem *fil_ori[4];
 	
 	// add a tap gesture recognizer
 	UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
+	tapGesture.numberOfTapsRequired = 1;
 	NSMutableArray *gestureRecognizers = [NSMutableArray array];
 	[gestureRecognizers addObject:tapGesture];
-	UILongPressGestureRecognizer *lpGesture = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(handleLongPress:)];
-	[gestureRecognizers addObject:lpGesture];
+	UITapGestureRecognizer *doubletapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handledoubleTap:)];
+	doubletapGesture.numberOfTapsRequired = 2;
+	[gestureRecognizers addObject:doubletapGesture];
+//	UILongPressGestureRecognizer *lpGesture = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(handleLongPress:)];
+//	[gestureRecognizers addObject:lpGesture];
 	[gestureRecognizers addObjectsFromArray:_sceneView.gestureRecognizers];
 
 	_sceneView.gestureRecognizers = gestureRecognizers;
@@ -244,7 +258,7 @@ FirstOrderSystem *fil_ori[4];
 	spotLightNode.light.castsShadow = YES;
 	spotLightNode.light.shadowBias = 10000;
 	spotLightNode.light.shadowRadius = 30;//(int)_splight_shadow_radius_slider.value;
-//	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
+	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
 //	spotLightNode.light.color = [UIColor colorWithWhite:0.0 alpha:0.8];
 //	spotLightNode.light.intensity = 0;
 	spotLightNode.light.shadowMapSize = CGSizeMake(4000, 4000);
@@ -313,6 +327,17 @@ FirstOrderSystem *fil_ori[4];
 								RKDataStreamingMaskLocatorAll;
 	[_robot enableSensors:mask atStreamingRate:10];
 }
+- (float) heading2robotcoordinate
+{
+	float heading = ref.heading-attitudeData.yaw;
+	if(heading<0){
+		heading += 360;
+	}
+	if(heading>360){
+		heading -= 360;
+	}
+	return heading;
+}
 - (void)handleAsyncMessage:(RKAsyncMessage *)message forRobot:(id<RKRobotBase>)robot {
 	// Need to check which type of async data is received as this method will be called for
 	// data streaming packets and sleep notification packets. We are going to ingnore the sleep
@@ -328,6 +353,11 @@ FirstOrderSystem *fil_ori[4];
 		locData = sensorsData.locatorData;
 //		NSLog(@"x:%f, y:%f", locData.position.x, locData.position.y);
 		
+		//translation to robot coordinate
+		if(isTouching){
+			[_robot driveWithHeading:[self heading2robotcoordinate] andVelocity:ref.vel];
+			NSLog(@"%f,%f",[self heading2robotcoordinate], ref.vel);
+		}
 	}
 }
 - (void)appWillResignActive:(NSNotification*)n {
@@ -381,6 +411,105 @@ FirstOrderSystem *fil_ori[4];
 - (void)handleDisconnected {
 	// Handle robot disconnected here
 }
+
+#pragma mark - UITouch/Gesturerecognizer
+
+- (void) update_robot_ref:(CGPoint)p
+{
+	double x_max = 315;
+	double y_max = 530;
+	// normalize
+	double vx = p.x/(x_max/2.0) - 1.0;
+	double vy = p.y/(y_max/2.0) - 1.0;
+	double k = _speed_bar.value;//0.75*0.001;
+	//	NSLog(@"slidar %f", k);
+	double k_heading = 0.25; //gain
+	ref.heading = atan2(vx,-vy)*180.0/3.141592*k_heading;
+	ref.vel = k*sqrt(vx*vx+vy*vy);
+//	[_robot driveWithHeading:heading andVelocity:vel];
+	//    NSLog(@"tapped %f, %f, %f, %f",p.x,p.y,heading,vel);
+}
+- (void) show_hide_parameter{
+	//	NSLog(@"長押し開始のタイミング");
+	SCNNode *splight_node = [scene.rootNode childNodeWithName:@"spotlight" recursively:YES];
+	//		splight_node.light.castsShadow = NO;
+	
+	bool visible =  !_speed_bar.isHidden;
+	[_status setHidden:visible];
+	[_robotStatus setHidden:visible];
+	[_speed_bar setHidden:visible];
+	[_splight_title setHidden:visible];
+	[_splight_pos_title setHidden:visible];
+	[_splight_pos_x setHidden:visible];
+	[_splight_pos_x_slider setHidden:visible];
+	[_splight_pos_y setHidden:visible];
+	[_splight_pos_y_slider setHidden:visible];
+	[_splight_pos_z setHidden:visible];
+	[_splight_pos_z_slider setHidden:visible];
+	[_splight_pos_ex setHidden:visible];
+	[_splight_pos_ex_slider setHidden:visible];
+	[_splight_pos_ey setHidden:visible];
+	[_splight_pos_ey_slider setHidden:visible];
+	[_splight_pos_ez setHidden:visible];
+	[_splight_pos_ez_slider setHidden:visible];
+	[_splight_shadow_title setHidden:visible];
+	[_splight_shadow_a setHidden:visible];
+	[_splight_shadow_a_slider setHidden:visible];
+	[_splight_shadow_radius setHidden:visible];
+	[_splight_shadow_radius_slider setHidden:visible];
+	[_splight_shadow_count setHidden:visible];
+	[_splight_shadow_count_slider setHidden:visible];
+	[_amblight_title setHidden:visible];
+	[_amblight_intens setHidden:visible];
+	[_amblight_intens_slider setHidden:visible];
+	[_blur_title setHidden:visible];
+	[_blur_mb setHidden:visible];
+	[_blur_mb_slider setHidden:visible];
+	[_blur_gbc setHidden:visible];
+	[_blur_gbc_slider setHidden:visible];
+	[_blur_gbk setHidden:visible];
+	[_blur_gbk_slider setHidden:visible];
+	[_mode_sw setHidden:visible];
+	
+}
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+//	touch_began_time = [NSDate date];
+	isTouching = true;
+	UITouch *touch = [touches anyObject];
+	CGPoint point = [touch locationInView:self.view];
+	[self update_robot_ref:point];
+
+//	NSLog(@"began %f, %f",point.x,point.y);
+}
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+//	NSDate *now = [NSDate date];
+//	NSTimeInterval interval = [now timeIntervalSinceDate:touch_began_time];
+//	if(interval>1.0){
+//		[self show_hide_parameter];
+//	}
+	UITouch *touch = [touches anyObject];
+	CGPoint point = [touch locationInView:self.view];
+	[self update_robot_ref:point];
+
+//	NSLog(@"moved %f, %f",point.x,point.y);
+
+}
+
+//this called insted of handletap if move during touch.
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+	isTouching = false;
+	UITouch *touch = [touches anyObject];
+	CGPoint point = [touch locationInView:self.view];
+	[self update_robot_ref:point];
+	[_robot driveWithHeading:[self heading2robotcoordinate] andVelocity:0.0]; //stop robot when touch ended.
+//	NSLog(@"ended %f, %f",point.x,point.y);
+
+}
+
+//this called insted of touchEnded if no move during touch.
 - (void) handleTap:(UIGestureRecognizer*)gestureRecognize
 {
 	// retrieve the SCNView
@@ -389,21 +518,10 @@ FirstOrderSystem *fil_ori[4];
 	// check what nodes are tapped
 	CGPoint p = [gestureRecognize locationInView:_sceneView];
 	NSArray *hitResults = [_sceneView hitTest:p options:nil];
-	
-	double x_max = 315;
-	double y_max = 530;
-	// normalize
-	double vx = p.x/(x_max/2.0) - 1.0;
-	double vy = p.y/(y_max/2.0) - 1.0;
-	double k = _speed_bar.value;//0.75*0.001;
-//	NSLog(@"slidar %f", k);
-	double heading = atan2(vx,-vy)*180.0/3.141592;
-	if(heading<0){
-		heading += 360;
-	}
-	double vel = k*sqrt(vx*vx+vy*vy);
-	[_robot driveWithHeading:heading andVelocity:vel];
-	//    NSLog(@"tapped %f, %f, %f, %f",p.x,p.y,heading,vel);
+//	NSLog(@"handletap %f, %f",p.x,p.y);
+	isTouching = false;
+	[_robot driveWithHeading:[self heading2robotcoordinate] andVelocity:0.0]; //stop robot when touch ended.
+//	[self update_robot_ref:p];
 	
 	// check that we clicked on at least one object
 	if([hitResults count] > 0){
@@ -465,48 +583,15 @@ FirstOrderSystem *fil_ori[4];
 		}
 	}
 }
+- (void) handledoubleTap:(UIGestureRecognizer*)gestureRecognize
+{
+	isTouching = false;
+	[self show_hide_parameter];
+}
 - (void) handleLongPress:(UIGestureRecognizer*)gestureRecognize
 {
-	if (gestureRecognize.state == UIGestureRecognizerStateBegan) {
-//		NSLog(@"長押し開始のタイミング");
-		SCNNode *splight_node = [scene.rootNode childNodeWithName:@"spotlight" recursively:YES];
-//		splight_node.light.castsShadow = NO;
-		
-		bool visible =  !_speed_bar.isHidden;
-		[_speed_bar setHidden:visible];
-		[_splight_title setHidden:visible];
-		[_splight_pos_title setHidden:visible];
-		[_splight_pos_x setHidden:visible];
-		[_splight_pos_x_slider setHidden:visible];
-		[_splight_pos_y setHidden:visible];
-		[_splight_pos_y_slider setHidden:visible];
-		[_splight_pos_z setHidden:visible];
-		[_splight_pos_z_slider setHidden:visible];
-		[_splight_pos_ex setHidden:visible];
-		[_splight_pos_ex_slider setHidden:visible];
-		[_splight_pos_ey setHidden:visible];
-		[_splight_pos_ey_slider setHidden:visible];
-		[_splight_pos_ez setHidden:visible];
-		[_splight_pos_ez_slider setHidden:visible];
-		[_splight_shadow_title setHidden:visible];
-		[_splight_shadow_a setHidden:visible];
-		[_splight_shadow_a_slider setHidden:visible];
-		[_splight_shadow_radius setHidden:visible];
-		[_splight_shadow_radius_slider setHidden:visible];
-		[_splight_shadow_count setHidden:visible];
-		[_splight_shadow_count_slider setHidden:visible];
-		[_amblight_title setHidden:visible];
-		[_amblight_intens setHidden:visible];
-		[_amblight_intens_slider setHidden:visible];
-		[_blur_title setHidden:visible];
-		[_blur_mb setHidden:visible];
-		[_blur_mb_slider setHidden:visible];
-		[_blur_gbc setHidden:visible];
-		[_blur_gbc_slider setHidden:visible];
-		[_blur_gbk setHidden:visible];
-		[_blur_gbk_slider setHidden:visible];
-		[_mode_sw setHidden:visible];
-
+	if (gestureRecognize.state == UIGestureRecognizerStateEnded) {
+		[self show_hide_parameter];
 	}
 }
 
