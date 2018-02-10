@@ -65,6 +65,7 @@ RKAttitudeData *attitudeData;
 RKQuaternionData *quaternionData;
 RKLocatorData *locData;
 
+float cg2real_scale = 0.126;//0.0365/0.315; // coeffs for cg 2 real
 float ball_radius = 0.0365;//0.2;
 float offline_move_radius = 0.1;
 float offline_move_freq = 0.3;
@@ -109,6 +110,9 @@ const float f_cutoff_ori = 1.0;//hz
 FirstOrderSystem *fil_pos[2];
 FirstOrderSystem *fil_ori[4];
 
+NSString* head_model = @"art.scnassets/bb8_head.obj";//@"art.scnassets/bb-unit-obj/bb-unit-head.obj";
+NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-obj/bb-unit-ball.obj";
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 
@@ -119,16 +123,16 @@ FirstOrderSystem *fil_ori[4];
 //    self.sceneView.showsStatistics = YES;
 	
     // Create a new scene
-	scene = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
-	SCNScene *scene_head_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
+	scene = [SCNScene sceneNamed:head_model];
+	SCNScene *scene_head_vel = [SCNScene sceneNamed:head_model];
 	[scene.rootNode addChildNode:scene_head_vel.rootNode.childNodes[0]];
-	SCNScene *scene_head_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-head.obj"];
+	SCNScene *scene_head_dis = [SCNScene sceneNamed:head_model];
 	[scene.rootNode addChildNode:scene_head_dis.rootNode.childNodes[0]];
-	SCNScene *scene_ball = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
+	SCNScene *scene_ball = [SCNScene sceneNamed:body_model];
 	[scene.rootNode addChildNode:scene_ball.rootNode.childNodes[0]];
-	SCNScene *scene_ball_vel = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
+	SCNScene *scene_ball_vel = [SCNScene sceneNamed:body_model];
 	[scene.rootNode addChildNode:scene_ball_vel.rootNode.childNodes[0]];
-	SCNScene *scene_ball_dis = [SCNScene sceneNamed:@"art.scnassets/bb-unit-obj/bb-unit-ball.obj"];
+	SCNScene *scene_ball_dis = [SCNScene sceneNamed:body_model];
 	[scene.rootNode addChildNode:scene_ball_dis.rootNode.childNodes[0]];
 
 	scene.rootNode.childNodes[0].name = @"head";
@@ -144,20 +148,26 @@ FirstOrderSystem *fil_ori[4];
 	program.fragmentFunctionName = @"velocity_fragment";
 	SCNNode *ball_vel_node = [scene.rootNode childNodeWithName:@"ball_vel" recursively:YES];
 	SCNNode *head_vel_node = [scene.rootNode childNodeWithName:@"head_vel" recursively:YES];
-	head_vel_node.geometry.materials[1].program = program; //must
+//	NSLog(@"%@",head_vel_node.geometry.materials);
+//	NSLog(@"%@",ball_vel_node.geometry.materials);
 	head_vel_node.geometry.materials[0].program = program;
-	ball_vel_node.geometry.materials[1].program = program; //must
+	head_vel_node.geometry.materials[1].program = program;
+	head_vel_node.geometry.materials[2].program = program;
+	head_vel_node.geometry.materials[3].program = program;
 	ball_vel_node.geometry.materials[0].program = program;
-	
+	ball_vel_node.geometry.materials[1].program = program;
+
 	SCNProgram *program_dis = [SCNProgram alloc];
 	program_dis.vertexFunctionName = @"distance_vertex";
 	program_dis.fragmentFunctionName = @"distance_fragment";
 	SCNNode *ball_dis_node = [scene.rootNode childNodeWithName:@"ball_dis" recursively:YES];
 	SCNNode *head_dis_node = [scene.rootNode childNodeWithName:@"head_dis" recursively:YES];
-	head_dis_node.geometry.materials[1].program = program_dis; //must
 	head_dis_node.geometry.materials[0].program = program_dis;
-	ball_dis_node.geometry.materials[1].program = program_dis; //must
+	head_dis_node.geometry.materials[1].program = program_dis;
+	head_dis_node.geometry.materials[2].program = program_dis;
+	head_dis_node.geometry.materials[3].program = program_dis;
 	ball_dis_node.geometry.materials[0].program = program_dis;
+	ball_dis_node.geometry.materials[1].program = program_dis;
 
 	// Set the scene to the view
     self.sceneView.scene = scene;
@@ -258,8 +268,9 @@ FirstOrderSystem *fil_ori[4];
 	spotLightNode.light.castsShadow = YES;
 	spotLightNode.light.shadowBias = 10000;
 	spotLightNode.light.shadowRadius = 30;//(int)_splight_shadow_radius_slider.value;
-	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
-//	spotLightNode.light.color = [UIColor colorWithWhite:0.0 alpha:0.8];
+//	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
+//	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:_splight_shadow_a_slider.value];
+	spotLightNode.light.shadowColor = [UIColor colorWithWhite:0.0 alpha:0.65];
 //	spotLightNode.light.intensity = 0;
 	spotLightNode.light.shadowMapSize = CGSizeMake(4000, 4000);
 	spotLightNode.light.shadowSampleCount = 2;//(int)_splight_shadow_count_slider.value;
@@ -559,6 +570,8 @@ FirstOrderSystem *fil_ori[4];
 		//		result.node.geometry.materials[1].transparency = 0.0;
 				head_node.geometry.materials[0].transparency = 0.0;
 				head_node.geometry.materials[1].transparency = 0.0;
+				head_node.geometry.materials[2].transparency = 0.0;
+				head_node.geometry.materials[3].transparency = 0.0;
 				ball_node.geometry.materials[0].transparency = 0.0;
 				ball_node.geometry.materials[1].transparency = 0.0;
 				[SCNTransaction commit];
@@ -566,6 +579,8 @@ FirstOrderSystem *fil_ori[4];
 				
 				head_node.geometry.materials[0].transparency = 1.0;
 				head_node.geometry.materials[1].transparency = 1.0;
+				head_node.geometry.materials[2].transparency = 1.0;
+				head_node.geometry.materials[3].transparency = 1.0;
 				ball_node.geometry.materials[0].transparency = 1.0;
 				ball_node.geometry.materials[1].transparency = 1.0;
 				
@@ -699,7 +714,7 @@ FirstOrderSystem *fil_ori[4];
 		
 	}
 	
-	float scale = 0.116;//0.0365/0.315; // coeffs for cg 2 real
+	float scale = cg2real_scale;
 	float scale_vel = scale*0.99;
 
 	ball_node.scale = SCNVector3Make(scale,scale,scale);
@@ -724,6 +739,8 @@ FirstOrderSystem *fil_ori[4];
 	NSData *uniformdata_head = [NSData dataWithBytes:&uniform_head length:sizeof(mb_uniforms)];
 	[head_vel_node.geometry.materials[0] setValue:uniformdata_head forKey:@"uniform"];
 	[head_vel_node.geometry.materials[1] setValue:uniformdata_head forKey:@"uniform"];
+	[head_vel_node.geometry.materials[2] setValue:uniformdata_head forKey:@"uniform"];
+	[head_vel_node.geometry.materials[3] setValue:uniformdata_head forKey:@"uniform"];
 
 	m_head_pre = m_head;
 	
@@ -752,6 +769,8 @@ FirstOrderSystem *fil_ori[4];
 	NSData *uniformdata_gb = [NSData dataWithBytes:&uniform_gb length:sizeof(gb_uniforms)];
 	[head_dis_node.geometry.materials[0] setValue:uniformdata_gb forKey:@"uniform"];
 	[head_dis_node.geometry.materials[1] setValue:uniformdata_gb forKey:@"uniform"];
+	[head_dis_node.geometry.materials[2] setValue:uniformdata_gb forKey:@"uniform"];
+	[head_dis_node.geometry.materials[3] setValue:uniformdata_gb forKey:@"uniform"];
 	[ball_dis_node.geometry.materials[0] setValue:uniformdata_gb forKey:@"uniform"];
 	[ball_dis_node.geometry.materials[1] setValue:uniformdata_gb forKey:@"uniform"];
 	

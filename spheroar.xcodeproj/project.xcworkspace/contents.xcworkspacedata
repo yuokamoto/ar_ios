@@ -2,6 +2,12 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:../README.cpp">
+   </FileRef>
+   <FileRef
+      location = "group:project.pbxproj">
+   </FileRef>
+   <FileRef
       location = "self:spheroar.xcodeproj">
    </FileRef>
 </Workspace>
