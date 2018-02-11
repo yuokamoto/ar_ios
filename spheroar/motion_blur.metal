@@ -131,7 +131,7 @@ fragment half4 gaus_blur_flagment(out_blur_vertex_t vert [[stage_in]],
 //	return half4(colorSampler.sample(s, float2(tc.x, tc.y)));
 	return half4(sum);//half4(distance);//half4(distance);//
 }
-fragment half4 mean_blur_flagment(out_blur_vertex_t vert [[stage_in]],
+fragment half4 mean_blur_flagment9(out_blur_vertex_t vert [[stage_in]],
 							 texture2d<float, access::sample> colorSampler [[texture(0)]],
 							 texture2d<float, access::sample> headDisSampler [[texture(1)]],
 							 texture2d<float, access::sample> ballDisSampler [[texture(2)]]
@@ -158,9 +158,48 @@ fragment half4 mean_blur_flagment(out_blur_vertex_t vert [[stage_in]],
 	//		distance.z = 0.0;
 	//	}
 	//	blur = 0.0;
-	float w = 1.0/81.0;
+	float w = 0.0123;//1.0/81.0;
 	for (int i=-4; i<5; i++) {
 		for (int j=-4; j<5; j++) {
+			sum += colorSampler.sample(s, float2(tc.x + j*distance, tc.y + i*distance)) * w;
+		}
+	}
+	
+	//discard alpha for our simple demo, multiply by vertex color and return
+	sum.a = 1.0;
+	//	return half4(colorSampler.sample(s, float2(tc.x, tc.y)));
+	return half4(sum);//half4(distance);//half4(distance);//
+}
+fragment half4 mean_blur_flagment5(out_blur_vertex_t vert [[stage_in]],
+								   texture2d<float, access::sample> colorSampler [[texture(0)]],
+								   texture2d<float, access::sample> headDisSampler [[texture(1)]],
+								   texture2d<float, access::sample> ballDisSampler [[texture(2)]]
+								   )
+{
+	
+	float4 sum = float4(0.0);
+	
+	//our original texcoord for this fragment
+	float2 tc = vert.uv;
+	
+	//the amount to blur, i.e. how far off center to sample from
+	//1.0 -> blur by one pixel
+	//2.0 -> blur by two pixels, etc.
+	float4 head_dis = headDisSampler.sample(s, float2(tc.x, tc.y));
+	float4 ball_dis = ballDisSampler.sample(s, float2(tc.x, tc.y));
+	float distance = ball_dis.z;
+	if( (head_dis.z < ball_dis.z && head_dis.z>0 && ball_dis.z>0) ||
+	   (head_dis.z>0 && ball_dis.z==0) ){
+		distance = head_dis.z;
+	}
+	//	float blur = fabs((distance.z*100.0-0.30)*0.01);///500.0;
+	//	if(distance.z==0){
+	//		distance.z = 0.0;
+	//	}
+	//	blur = 0.0;
+	float w = 0.04;// 1.0/25.0;
+	for (int i=-2; i<3; i++) {
+		for (int j=-2; j<3; j++) {
 			sum += colorSampler.sample(s, float2(tc.x + j*distance, tc.y + i*distance)) * w;
 		}
 	}

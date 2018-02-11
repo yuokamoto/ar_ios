@@ -10,6 +10,9 @@
 #define Filter_h
 #import <Foundation/Foundation.h>
 @interface FirstOrderSystem : NSObject
+@property (nonatomic) float omega;
+@property (nonatomic) float prev_output;
+@property (nonatomic) float prev_time;
 - (bool) setFreq:(float) freq;
 - (float) updateWithInput:(const float) input t: (const float) time;
 @end

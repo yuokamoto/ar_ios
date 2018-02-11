@@ -50,6 +50,7 @@
 			<dict>
 				<key>colorSampler</key>
 				<string>blur_scene</string>
+<!--				<string>COLOR</string>-->
 				<key>headVelSampler</key>
 				<string>head_vel_scene</string>
 				<key>ballVelSampler</key>
@@ -119,7 +120,7 @@
 			<string>blur_vertex</string>
 			<key>metalFragmentShader</key>
 <!--			<string>gaus_blur_flagment</string>-->
-			<string>mean_blur_flagment</string>
+			<string>mean_blur_flagment5</string>
 			<key>inputs</key>
 			<dict>
 				<key>colorSampler</key>

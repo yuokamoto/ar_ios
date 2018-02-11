@@ -85,6 +85,8 @@ SCNScene *scene;
 SCNMatrix4 plane_matrix;
 SCNMatrix4 m_head_pre;
 SCNMatrix4 m_ball_pre;
+SCNMatrix4 ballRotMat;
+float heading_pre = 0.0;
 
 //blur variables
 float mb = 0.15; //strength of motion blur
@@ -120,7 +122,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
     self.sceneView.delegate = self;
 
     // Show statistics such as fps and timing information
-//    self.sceneView.showsStatistics = YES;
+    self.sceneView.showsStatistics = YES;
 	
     // Create a new scene
 	scene = [SCNScene sceneNamed:head_model];
@@ -177,6 +179,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 	plane_matrix =SCNMatrix4MakeTranslation(0,-0.15,-0.15);
 	m_head_pre = SCNMatrix4Identity;
 	m_ball_pre = SCNMatrix4Identity;
+	ballRotMat = SCNMatrix4Identity;
 //	[self drawplanewithWidth:1.0 height:1.0 trans:&plane_matrix];
 //	[self insertSpotLight:SCNVector3Make(0,2,0)];
 
@@ -367,7 +370,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 		//translation to robot coordinate
 		if(isTouching){
 			[_robot driveWithHeading:[self heading2robotcoordinate] andVelocity:ref.vel];
-			NSLog(@"%f,%f",[self heading2robotcoordinate], ref.vel);
+//			NSLog(@"%f,%f",[self heading2robotcoordinate], ref.vel);
 		}
 	}
 }
@@ -675,11 +678,13 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 
 	}else{
 		//        double deg2rad = 3.141592/180.0;
-		double p[2] = {
+		float p[2] = {
 			locData.position.x*0.01,
-			locData.position.y*0.01}
-		;
-		double q[4] = {
+			locData.position.y*0.01
+		};
+		float p_prev[2];
+		float p_diff[2];
+		float q[4] = {
 			quaternionData.quaternions.q0,
 			quaternionData.quaternions.q1,
 			quaternionData.quaternions.q2,
@@ -688,10 +693,13 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 		
 		//filtering_data
 		float t_now = time;//*0.001f;
+		
 		for(unsigned int i=0; i<2; i++){
 //			float p_p = p[i];
+			p_prev[i] = fil_pos[i].prev_output;
 			p[i] = [fil_pos[i] updateWithInput:p[i] t:t_now];
 //			NSLog(@"pos %d: %f,%f\n",i,p_p,p[i]);
+			p_diff[i] = p[i] - p_prev[i];
 		}
 		for(unsigned int i=0; i<4; i++){
 //			float q_p = q[i];
@@ -707,9 +715,22 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 		headMat = SCNMatrix4Translate(headMat,-p[0], ball_radius, p[1]);
 		head_node.transform = SCNMatrix4Mult(headMat, plane_matrix);
 		
-		SCNMatrix4 ballMat = SCNMatrix4MakeRotation(p[1]/ball_radius, 1.0, 0.0, 0.0);
-		ballMat = SCNMatrix4Rotate(ballMat, p[0]/ball_radius, 0.0, 0.0, 1.0);
-		ballMat = SCNMatrix4Translate(ballMat,-p[0], ball_radius, p[1]);
+//		SCNMatrix4 ballMat = SCNMatrix4MakeRotation(p[1]/ball_radius, 1.0, 0.0, 0.0);
+//		ballMat = SCNMatrix4Rotate(ballMat, p[0]/ball_radius, 0.0, 0.0, 1.0);
+//		ballMat = SCNMatrix4Rotate(ballMat, 2.0*acos(q[0]),
+//								   -q[1],
+//								   -q[3],
+//								   q[2]);
+		
+		float move_l = sqrt(p_diff[0]*p_diff[0] + p_diff[1]*p_diff[1])/ball_radius;
+//		float heading;
+//		if( fabs(p_diff[0])<1e-6){
+//			heading = heading_pre;
+//		}
+//		heading = atan2f(p_diff[1], -p_diff[0]); //acos(-p[0]/p[1]);
+//		heading_pre = heading;
+		ballRotMat = SCNMatrix4Rotate(ballRotMat, move_l, p_diff[1], 0.0, p_diff[0]);
+		SCNMatrix4 ballMat = SCNMatrix4Translate(ballRotMat,-p[0], ball_radius, p[1]);
 		ball_node.transform = SCNMatrix4Mult(ballMat, plane_matrix);
 		//        ball_node.eulerAngles = SCNVector3Make(-attitudeData.pitch*deg2rad, attitudeData.yaw*deg2rad, attitudeData.roll*deg2rad);
 		

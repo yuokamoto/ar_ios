@@ -9,9 +9,7 @@
 #import "Filter.h"
 
 @interface FirstOrderSystem ()
-@property (nonatomic) float omega;
-@property (nonatomic) float prev_output;
-@property (nonatomic) float prev_time;
+
 @end
 
 @implementation FirstOrderSystem
