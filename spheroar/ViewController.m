@@ -223,6 +223,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 	[gestureRecognizers addObject:tapGesture];
 	UITapGestureRecognizer *doubletapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handledoubleTap:)];
 	doubletapGesture.numberOfTapsRequired = 2;
+	doubletapGesture.numberOfTouchesRequired = 2;
 	[gestureRecognizers addObject:doubletapGesture];
 //	UILongPressGestureRecognizer *lpGesture = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(handleLongPress:)];
 //	[gestureRecognizers addObject:lpGesture];
@@ -430,11 +431,24 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 
 - (void) update_robot_ref:(CGPoint)p
 {
-	double x_max = 315;
-	double y_max = 530;
+	double x_max, y_max;
+	UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
+	switch (orientation) {
+		case UIInterfaceOrientationPortrait:
+			x_max = 375;
+			y_max = 812;
+			break;
+		default:
+			x_max = 812;
+			y_max = 375;
+			break;
+	}
+	//NSLog(@"max %f, %f",x_max,y_max);
+	
 	// normalize
 	double vx = p.x/(x_max/2.0) - 1.0;
 	double vy = p.y/(y_max/2.0) - 1.0;
+//	NSLog(@"vref %f, %f",vx,vy);
 	double k = _speed_bar.value;//0.75*0.001;
 	//	NSLog(@"slidar %f", k);
 	double k_heading = 0.25; //gain
