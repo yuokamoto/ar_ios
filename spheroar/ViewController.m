@@ -481,6 +481,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 	[_blur_gbk setHidden:visible];
 	[_blur_gbk_slider setHidden:visible];
 	[_mode_sw setHidden:visible];
+	self.sceneView.showsStatistics = !visible;
 	
 }
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
