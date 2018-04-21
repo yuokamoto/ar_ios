@@ -40,7 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D837A4C01FCC4573002C2C13 /* spheroar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = spheroar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D837A4C01FCC4573002C2C13 /* BB8AR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BB8AR.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D837A4C31FCC4573002C2C13 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		D837A4C41FCC4573002C2C13 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		D837A4C61FCC4573002C2C13 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
@@ -51,10 +51,10 @@
 		D837A4D11FCC4573002C2C13 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		D837A4D31FCC4573002C2C13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D837A4D41FCC4573002C2C13 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		D837A4DA1FCC4574002C2C13 /* spheroarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = spheroarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D837A4DA1FCC4574002C2C13 /* BB8ARTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BB8ARTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D837A4DE1FCC4574002C2C13 /* spheroarTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = spheroarTests.m; sourceTree = "<group>"; };
 		D837A4E01FCC4574002C2C13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		D837A4E51FCC4574002C2C13 /* spheroarUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = spheroarUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D837A4E51FCC4574002C2C13 /* BB8ARUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BB8ARUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D837A4E91FCC4574002C2C13 /* spheroarUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = spheroarUITests.m; sourceTree = "<group>"; };
 		D837A4EB1FCC4574002C2C13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D837A4F71FCC464A002C2C13 /* RobotKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = RobotKit.framework; sourceTree = "<group>"; };
@@ -103,9 +103,9 @@
 		D837A4C11FCC4573002C2C13 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D837A4C01FCC4573002C2C13 /* spheroar.app */,
-				D837A4DA1FCC4574002C2C13 /* spheroarTests.xctest */,
-				D837A4E51FCC4574002C2C13 /* spheroarUITests.xctest */,
+				D837A4C01FCC4573002C2C13 /* BB8AR.app */,
+				D837A4DA1FCC4574002C2C13 /* BB8ARTests.xctest */,
+				D837A4E51FCC4574002C2C13 /* BB8ARUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -153,9 +153,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D837A4BF1FCC4573002C2C13 /* spheroar */ = {
+		D837A4BF1FCC4573002C2C13 /* BB8AR */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D837A4EE1FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "spheroar" */;
+			buildConfigurationList = D837A4EE1FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "BB8AR" */;
 			buildPhases = (
 				D837A4BC1FCC4573002C2C13 /* Sources */,
 				D837A4BD1FCC4573002C2C13 /* Frameworks */,
@@ -165,14 +165,14 @@
 			);
 			dependencies = (
 			);
-			name = spheroar;
+			name = BB8AR;
 			productName = spheroar;
-			productReference = D837A4C01FCC4573002C2C13 /* spheroar.app */;
+			productReference = D837A4C01FCC4573002C2C13 /* BB8AR.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D837A4D91FCC4574002C2C13 /* spheroarTests */ = {
+		D837A4D91FCC4574002C2C13 /* BB8ARTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D837A4F11FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "spheroarTests" */;
+			buildConfigurationList = D837A4F11FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "BB8ARTests" */;
 			buildPhases = (
 				D837A4D61FCC4574002C2C13 /* Sources */,
 				D837A4D71FCC4574002C2C13 /* Frameworks */,
@@ -183,14 +183,14 @@
 			dependencies = (
 				D837A4DC1FCC4574002C2C13 /* PBXTargetDependency */,
 			);
-			name = spheroarTests;
+			name = BB8ARTests;
 			productName = spheroarTests;
-			productReference = D837A4DA1FCC4574002C2C13 /* spheroarTests.xctest */;
+			productReference = D837A4DA1FCC4574002C2C13 /* BB8ARTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		D837A4E41FCC4574002C2C13 /* spheroarUITests */ = {
+		D837A4E41FCC4574002C2C13 /* BB8ARUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D837A4F41FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "spheroarUITests" */;
+			buildConfigurationList = D837A4F41FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "BB8ARUITests" */;
 			buildPhases = (
 				D837A4E11FCC4574002C2C13 /* Sources */,
 				D837A4E21FCC4574002C2C13 /* Frameworks */,
@@ -201,9 +201,9 @@
 			dependencies = (
 				D837A4E71FCC4574002C2C13 /* PBXTargetDependency */,
 			);
-			name = spheroarUITests;
+			name = BB8ARUITests;
 			productName = spheroarUITests;
-			productReference = D837A4E51FCC4574002C2C13 /* spheroarUITests.xctest */;
+			productReference = D837A4E51FCC4574002C2C13 /* BB8ARUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -236,7 +236,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D837A4BB1FCC4573002C2C13 /* Build configuration list for PBXProject "spheroar" */;
+			buildConfigurationList = D837A4BB1FCC4573002C2C13 /* Build configuration list for PBXProject "BB8AR" */;
 			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -249,9 +249,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D837A4BF1FCC4573002C2C13 /* spheroar */,
-				D837A4D91FCC4574002C2C13 /* spheroarTests */,
-				D837A4E41FCC4574002C2C13 /* spheroarUITests */,
+				D837A4BF1FCC4573002C2C13 /* BB8AR */,
+				D837A4D91FCC4574002C2C13 /* BB8ARTests */,
+				D837A4E41FCC4574002C2C13 /* BB8ARUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -319,12 +319,12 @@
 /* Begin PBXTargetDependency section */
 		D837A4DC1FCC4574002C2C13 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D837A4BF1FCC4573002C2C13 /* spheroar */;
+			target = D837A4BF1FCC4573002C2C13 /* BB8AR */;
 			targetProxy = D837A4DB1FCC4574002C2C13 /* PBXContainerItemProxy */;
 		};
 		D837A4E71FCC4574002C2C13 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D837A4BF1FCC4573002C2C13 /* spheroar */;
+			target = D837A4BF1FCC4573002C2C13 /* BB8AR */;
 			targetProxy = D837A4E61FCC4574002C2C13 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -464,7 +464,7 @@
 					"$(PROJECT_DIR)/spheroar",
 				);
 				INFOPLIST_FILE = spheroar/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = (
 					"-ObjC",
@@ -487,7 +487,7 @@
 					"$(PROJECT_DIR)/spheroar",
 				);
 				INFOPLIST_FILE = spheroar/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = (
 					"-ObjC",
@@ -510,7 +510,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = test.spheroarTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/spheroar.app/spheroar";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BB8AR.app/BB8AR";
 			};
 			name = Debug;
 		};
@@ -525,7 +525,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = test.spheroarTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/spheroar.app/spheroar";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BB8AR.app/BB8AR";
 			};
 			name = Release;
 		};
@@ -560,7 +560,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D837A4BB1FCC4573002C2C13 /* Build configuration list for PBXProject "spheroar" */ = {
+		D837A4BB1FCC4573002C2C13 /* Build configuration list for PBXProject "BB8AR" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D837A4EC1FCC4574002C2C13 /* Debug */,
@@ -569,7 +569,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D837A4EE1FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "spheroar" */ = {
+		D837A4EE1FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "BB8AR" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D837A4EF1FCC4574002C2C13 /* Debug */,
@@ -578,7 +578,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D837A4F11FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "spheroarTests" */ = {
+		D837A4F11FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "BB8ARTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D837A4F21FCC4574002C2C13 /* Debug */,
@@ -587,7 +587,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D837A4F41FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "spheroarUITests" */ = {
+		D837A4F41FCC4574002C2C13 /* Build configuration list for PBXNativeTarget "BB8ARUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D837A4F51FCC4574002C2C13 /* Debug */,

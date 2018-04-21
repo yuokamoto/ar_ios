@@ -38,7 +38,8 @@
 @property (strong, nonatomic) IBOutlet UISlider *splight_shadow_radius_slider;
 @property (strong, nonatomic) IBOutlet UILabel *splight_shadow_count;
 @property (strong, nonatomic) IBOutlet UISlider *splight_shadow_count_slider;
-
+@property (strong, nonatomic) IBOutlet UILabel *splight_intens;
+@property (strong, nonatomic) IBOutlet UISlider *splight_intens_slider;
 @property (strong, nonatomic) IBOutlet UILabel *amblight_title;
 @property (strong, nonatomic) IBOutlet UILabel *amblight_intens;
 @property (strong, nonatomic) IBOutlet UISlider *amblight_intens_slider;
@@ -65,8 +66,8 @@ RKAttitudeData *attitudeData;
 RKQuaternionData *quaternionData;
 RKLocatorData *locData;
 
-float cg2real_scale = 0.126;//0.0365/0.315; // coeffs for cg 2 real
-float ball_radius = 0.0365;//0.2;
+float cg2real_scale = 0.116;//0.126;//0.0365/0.315; // coeffs for cg 2 real
+float ball_radius = 0.033;//0.0365;//0.2;
 float offline_move_radius = 0.1;
 float offline_move_freq = 0.3;
 bool isVisible = false;
@@ -174,7 +175,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 	// Set the scene to the view
     self.sceneView.scene = scene;
 //	self.sceneView.debugOptions = ARSCNDebugOptionShowWorldOrigin;// | ARSCNDebugOptionShowFeaturePoints;
-	self.sceneView.automaticallyUpdatesLighting = YES;
+//	self.sceneView.automaticallyUpdatesLighting = YES;
 
 	plane_matrix =SCNMatrix4MakeTranslation(0,-0.15,-0.15);
 	m_head_pre = SCNMatrix4Identity;
@@ -266,6 +267,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 	spotLightNode.name = @"spotlight";
 	spotLightNode.light = [SCNLight light];
 	spotLightNode.light.type = SCNLightTypeSpot;
+	spotLightNode.light.intensity = 50.0; //todo parameterise
 	spotLightNode.light.spotInnerAngle = 180;
 	spotLightNode.light.spotOuterAngle = 180;
 	spotLightNode.light.shadowMode = SCNShadowModeDeferred;
@@ -285,6 +287,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 	// x-axis to point it down
 	
 	spotLightNode.eulerAngles = SCNVector3Make(-M_PI / 2, 0, 0);
+	
 //	spotLightNode.eulerAngles = SCNVector3Make(_splight_pos_ex_slider.value, _splight_pos_ey_slider.value, _splight_pos_ez_slider.value );
 	[_sceneView.scene.rootNode addChildNode: spotLightNode];
 }
@@ -487,6 +490,8 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 	[_splight_shadow_radius_slider setHidden:visible];
 	[_splight_shadow_count setHidden:visible];
 	[_splight_shadow_count_slider setHidden:visible];
+	[_splight_intens setHidden:visible];
+	[_splight_intens_slider setHidden:visible];
 	[_amblight_title setHidden:visible];
 	[_amblight_intens setHidden:visible];
 	[_amblight_intens_slider setHidden:visible];
@@ -619,6 +624,7 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 - (void) handledoubleTap:(UIGestureRecognizer*)gestureRecognize
 {
 	isTouching = false;
+	NSLog(@"double touched");
 	[self show_hide_parameter];
 }
 - (void) handleLongPress:(UIGestureRecognizer*)gestureRecognize
@@ -921,6 +927,14 @@ NSString* body_model =  @"art.scnassets/bb8_body.obj";//@"art.scnassets/bb-unit-
 - (IBAction)splight_shadow_count_change:(id)sender {
 	[self splight_shadow_param_change];
 }
+- (void)splight_other_param_change{
+	SCNNode *splight_node = [scene.rootNode childNodeWithName:@"spotlight" recursively:YES];
+	splight_node.light.intensity = (int)_splight_intens_slider.value;
+}
+- (IBAction)splight_intens_change:(id)sender {
+	[self splight_other_param_change];
+}
+
 - (void)amblight_param_change{
 	SCNNode *amblight_node = [scene.rootNode childNodeWithName:@"amblight" recursively:YES];
 	amblight_node.light.intensity = _amblight_intens_slider.value;
